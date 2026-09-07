@@ -98,6 +98,13 @@ describe('阶段10 - CSS安全区处理', function () {
     const html = fs.readFileSync(path.join(PROJECT_ROOT, 'www', 'index.html'), 'utf8');
     assert.ok(html.includes('viewport-fit=cover'), 'viewport应包含viewport-fit=cover');
   });
+
+  test('弹窗按钮容器支持flex-wrap换行', function () {
+    const actionsMatch = css.match(/\.modal-actions\s*\{([\s\S]*?)\}/);
+    assert.ok(actionsMatch, '应包含.modal-actions样式');
+    assert.ok(actionsMatch[1].includes('flex-wrap'), '弹窗按钮容器应支持flex-wrap换行');
+    assert.ok(actionsMatch[1].includes('wrap'), 'flex-wrap值应为wrap');
+  });
 });
 
 describe('阶段10 - 页面渲染验证', function () {
