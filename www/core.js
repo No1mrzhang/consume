@@ -1356,5 +1356,189 @@
     }
   };
 
+  // ===== 日历模块 =====
+  App.Calendar = {
+    /**
+     * 获取某月的日历数据
+     * @param {number} year - 年
+     * @param {number} month - 月（1-12）
+     * @returns {object} {weeks: [[{date, day, amount, count, isToday, hasRecords}]], monthTotal, monthKey}
+     */
+    getMonthCalendar: function (year, month) {
+      const firstDay = new Date(year, month - 1, 1);
+      const lastDay = new Date(year, month, 0);
+      const startWeekday = firstDay.getDay(); // 0=周日
+      const daysInMonth = lastDay.getDate();
+      const todayStr = App.Utils.today();
+      const monthKey = year + '-' + String(month).padStart(2, '0');
+
+      // 获取当月所有记录
+      const monthRecords = App.Records.getByMonth(monthKey);
+
+      // 按日期分组计算消费
+      const dayMap = {};
+      monthRecords.forEach(r => {
+        if (!dayMap[r.date]) {
+          dayMap[r.date] = { amount: 0, count: 0 };
+        }
+        dayMap[r.date].amount += Number(r.amount);
+        dayMap[r.date].count += 1;
+      });
+
+      // 构建日历周
+      const weeks = [];
+      let currentWeek = [];
+
+      // 填充月初空白
+      for (let i = 0; i < startWeekday; i++) {
+        currentWeek.push(null);
+      }
+
+      // 填充日期
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+        const dayData = dayMap[dateStr] || { amount: 0, count: 0 };
+        currentWeek.push({
+          date: dateStr,
+          day: day,
+          amount: dayData.amount,
+          count: dayData.count,
+          isToday: dateStr === todayStr,
+          hasRecords: dayData.count > 0
+        });
+
+        if (currentWeek.length === 7) {
+          weeks.push(currentWeek);
+          currentWeek = [];
+        }
+      }
+
+      // 填充月末空白
+      if (currentWeek.length > 0) {
+        while (currentWeek.length < 7) {
+          currentWeek.push(null);
+        }
+        weeks.push(currentWeek);
+      }
+
+      // 计算月总消费
+      const monthTotal = monthRecords.reduce((sum, r) => sum + Number(r.amount), 0);
+
+      return {
+        year: year,
+        month: month,
+        monthKey: monthKey,
+        weeks: weeks,
+        monthTotal: monthTotal,
+        recordCount: monthRecords.length
+      };
+    },
+
+    /**
+     * 获取某天的所有记录
+     * @param {string} date - YYYY-MM-DD
+     * @returns {object} {records, total, count}
+     */
+    getDayDetail: function (date) {
+      const records = App.Records.getByDate(date);
+      const total = records.reduce((sum, r) => sum + Number(r.amount), 0);
+      return {
+        date: date,
+        records: records,
+        total: total,
+        count: records.length
+      };
+    },
+
+    /**
+     * 获取月消费对比（当月 vs 上月）
+     * @param {number} year - 年
+     * @param {number} month - 月（1-12）
+     * @returns {object} {current: {total, count, avg}, previous: {total, count, avg}, diff, diffPercent, trend}
+     */
+    getMonthComparison: function (year, month) {
+      // 当月
+      const currentKey = year + '-' + String(month).padStart(2, '0');
+      const currentRecords = App.Records.getByMonth(currentKey);
+      const currentTotal = currentRecords.reduce((sum, r) => sum + Number(r.amount), 0);
+      const currentCount = currentRecords.length;
+      const daysInCurrentMonth = new Date(year, month, 0).getDate();
+      const currentAvg = currentCount > 0 ? currentTotal / currentCount : 0;
+
+      // 上月
+      let prevYear = year;
+      let prevMonth = month - 1;
+      if (prevMonth < 1) {
+        prevMonth = 12;
+        prevYear = year - 1;
+      }
+      const prevKey = prevYear + '-' + String(prevMonth).padStart(2, '0');
+      const prevRecords = App.Records.getByMonth(prevKey);
+      const prevTotal = prevRecords.reduce((sum, r) => sum + Number(r.amount), 0);
+      const prevCount = prevRecords.length;
+      const prevAvg = prevCount > 0 ? prevTotal / prevCount : 0;
+
+      // 对比
+      const diff = currentTotal - prevTotal;
+      const diffPercent = prevTotal > 0 ? Math.round(diff / prevTotal * 100) : 0;
+      let trend = 'equal';
+      if (diff > 0) trend = 'up';
+      else if (diff < 0) trend = 'down';
+
+      return {
+        current: {
+          monthKey: currentKey,
+          total: currentTotal,
+          count: currentCount,
+          avgPerRecord: currentAvg,
+          daysInMonth: daysInCurrentMonth
+        },
+        previous: {
+          monthKey: prevKey,
+          total: prevTotal,
+          count: prevCount,
+          avgPerRecord: prevAvg
+        },
+        diff: diff,
+        diffPercent: diffPercent,
+        trend: trend
+      };
+    },
+
+    /**
+     * 获取某月各分类消费统计（用于日历详情页）
+     * @param {number} year
+     * @param {number} month
+     * @returns {Array} [{categoryId, categoryName, categoryIcon, total, count, percent}]
+     */
+    getMonthCategoryStats: function (year, month) {
+      const monthKey = year + '-' + String(month).padStart(2, '0');
+      const records = App.Records.getByMonth(monthKey);
+      const total = records.reduce((sum, r) => sum + Number(r.amount), 0);
+
+      const catMap = {};
+      records.forEach(r => {
+        if (!catMap[r.categoryId]) {
+          catMap[r.categoryId] = {
+            categoryId: r.categoryId,
+            categoryName: r.categoryName,
+            categoryIcon: r.categoryIcon,
+            total: 0,
+            count: 0
+          };
+        }
+        catMap[r.categoryId].total += Number(r.amount);
+        catMap[r.categoryId].count += 1;
+      });
+
+      return Object.values(catMap)
+        .map(c => ({
+          ...c,
+          percent: total > 0 ? Math.round(c.total / total * 100) : 0
+        }))
+        .sort((a, b) => b.total - a.total);
+    }
+  };
+
   return App;
 });

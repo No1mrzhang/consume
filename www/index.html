@@ -664,6 +664,166 @@
       cursor: pointer;
       color: var(--text);
     }
+    .bills-view-toggle {
+      width: 32px;
+      height: 32px;
+      font-size: 16px;
+      background: var(--bg-cream);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .bills-view-toggle.active {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* === 日历视图 === */
+    .calendar-container {
+      padding: 12px 16px 20px;
+    }
+    .calendar-comparison {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
+    .calendar-comparison-title {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    .calendar-comparison-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .calendar-comparison-label {
+      font-size: 13px;
+      color: var(--text);
+    }
+    .calendar-comparison-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .calendar-comparison-diff {
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+    .calendar-comparison-diff.up {
+      background: rgba(255, 80, 80, 0.1);
+      color: #E04040;
+    }
+    .calendar-comparison-diff.down {
+      background: rgba(76, 175, 80, 0.1);
+      color: #4CAF50;
+    }
+    .calendar-comparison-diff.equal {
+      background: var(--bg-cream);
+      color: var(--text-light);
+    }
+    .calendar-grid {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 12px;
+      border: 1px solid var(--border);
+    }
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      margin-bottom: 8px;
+    }
+    .calendar-weekday {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-light);
+      font-weight: 600;
+      padding: 6px 0;
+    }
+    .calendar-weekday.weekend {
+      color: var(--primary);
+    }
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .calendar-day {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s;
+    }
+    .calendar-day:active {
+      transform: scale(0.92);
+    }
+    .calendar-day-number {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .calendar-day-amount {
+      font-size: 10px;
+      color: var(--primary);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .calendar-day.has-records {
+      background: rgba(255, 140, 66, 0.08);
+    }
+    .calendar-day.has-records .calendar-day-number {
+      color: var(--primary-dark);
+      font-weight: 600;
+    }
+    .calendar-day.is-today {
+      background: var(--primary);
+    }
+    .calendar-day.is-today .calendar-day-number,
+    .calendar-day.is-today .calendar-day-amount {
+      color: #fff;
+    }
+    .calendar-day.selected {
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+    .calendar-day.empty {
+      cursor: default;
+    }
+    .calendar-month-summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 4px 0;
+      margin-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .calendar-summary-label {
+      font-size: 13px;
+      color: var(--text-light);
+    }
+    .calendar-summary-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .detail-subtitle {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-top: 4px;
+    }
     .bill-date-group {
       margin: 12px 16px 0;
     }
@@ -1677,9 +1837,26 @@
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="bills-total" id="billsMonthTotal">¥0</div>
           <button class="bills-filter-btn" id="billsFilterBtn">全部分类</button>
+          <button class="bills-view-toggle" id="billsViewToggle" title="切换视图">📅</button>
         </div>
       </div>
       <div id="billsListContainer"></div>
+      <div id="billsCalendarContainer" style="display:none;"></div>
+    </div>
+
+    <!-- 日历日期详情覆盖层 -->
+    <div class="detail-overlay" id="calendarDayOverlay">
+      <div class="detail-header">
+        <div class="detail-back" id="calendarDayBack">‹</div>
+        <div class="detail-title" id="calendarDayTitle">9月7日 消费详情</div>
+      </div>
+      <div class="detail-body" id="calendarDayBody">
+        <div class="detail-amount-section">
+          <div class="detail-amount"><span class="currency">¥</span><span id="calendarDayTotal">0</span></div>
+          <div class="detail-subtitle" id="calendarDayCount">共 0 笔消费</div>
+        </div>
+        <div id="calendarDayRecords"></div>
+      </div>
     </div>
 
     <!-- 账单详情页（覆盖层） -->
@@ -3338,6 +3515,190 @@
     }
   };
 
+  // ===== 日历模块 =====
+  App.Calendar = {
+    /**
+     * 获取某月的日历数据
+     * @param {number} year - 年
+     * @param {number} month - 月（1-12）
+     * @returns {object} {weeks: [[{date, day, amount, count, isToday, hasRecords}]], monthTotal, monthKey}
+     */
+    getMonthCalendar: function (year, month) {
+      const firstDay = new Date(year, month - 1, 1);
+      const lastDay = new Date(year, month, 0);
+      const startWeekday = firstDay.getDay(); // 0=周日
+      const daysInMonth = lastDay.getDate();
+      const todayStr = App.Utils.today();
+      const monthKey = year + '-' + String(month).padStart(2, '0');
+
+      // 获取当月所有记录
+      const monthRecords = App.Records.getByMonth(monthKey);
+
+      // 按日期分组计算消费
+      const dayMap = {};
+      monthRecords.forEach(r => {
+        if (!dayMap[r.date]) {
+          dayMap[r.date] = { amount: 0, count: 0 };
+        }
+        dayMap[r.date].amount += Number(r.amount);
+        dayMap[r.date].count += 1;
+      });
+
+      // 构建日历周
+      const weeks = [];
+      let currentWeek = [];
+
+      // 填充月初空白
+      for (let i = 0; i < startWeekday; i++) {
+        currentWeek.push(null);
+      }
+
+      // 填充日期
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+        const dayData = dayMap[dateStr] || { amount: 0, count: 0 };
+        currentWeek.push({
+          date: dateStr,
+          day: day,
+          amount: dayData.amount,
+          count: dayData.count,
+          isToday: dateStr === todayStr,
+          hasRecords: dayData.count > 0
+        });
+
+        if (currentWeek.length === 7) {
+          weeks.push(currentWeek);
+          currentWeek = [];
+        }
+      }
+
+      // 填充月末空白
+      if (currentWeek.length > 0) {
+        while (currentWeek.length < 7) {
+          currentWeek.push(null);
+        }
+        weeks.push(currentWeek);
+      }
+
+      // 计算月总消费
+      const monthTotal = monthRecords.reduce((sum, r) => sum + Number(r.amount), 0);
+
+      return {
+        year: year,
+        month: month,
+        monthKey: monthKey,
+        weeks: weeks,
+        monthTotal: monthTotal,
+        recordCount: monthRecords.length
+      };
+    },
+
+    /**
+     * 获取某天的所有记录
+     * @param {string} date - YYYY-MM-DD
+     * @returns {object} {records, total, count}
+     */
+    getDayDetail: function (date) {
+      const records = App.Records.getByDate(date);
+      const total = records.reduce((sum, r) => sum + Number(r.amount), 0);
+      return {
+        date: date,
+        records: records,
+        total: total,
+        count: records.length
+      };
+    },
+
+    /**
+     * 获取月消费对比（当月 vs 上月）
+     * @param {number} year - 年
+     * @param {number} month - 月（1-12）
+     * @returns {object} {current: {total, count, avg}, previous: {total, count, avg}, diff, diffPercent, trend}
+     */
+    getMonthComparison: function (year, month) {
+      // 当月
+      const currentKey = year + '-' + String(month).padStart(2, '0');
+      const currentRecords = App.Records.getByMonth(currentKey);
+      const currentTotal = currentRecords.reduce((sum, r) => sum + Number(r.amount), 0);
+      const currentCount = currentRecords.length;
+      const daysInCurrentMonth = new Date(year, month, 0).getDate();
+      const currentAvg = currentCount > 0 ? currentTotal / currentCount : 0;
+
+      // 上月
+      let prevYear = year;
+      let prevMonth = month - 1;
+      if (prevMonth < 1) {
+        prevMonth = 12;
+        prevYear = year - 1;
+      }
+      const prevKey = prevYear + '-' + String(prevMonth).padStart(2, '0');
+      const prevRecords = App.Records.getByMonth(prevKey);
+      const prevTotal = prevRecords.reduce((sum, r) => sum + Number(r.amount), 0);
+      const prevCount = prevRecords.length;
+      const prevAvg = prevCount > 0 ? prevTotal / prevCount : 0;
+
+      // 对比
+      const diff = currentTotal - prevTotal;
+      const diffPercent = prevTotal > 0 ? Math.round(diff / prevTotal * 100) : 0;
+      let trend = 'equal';
+      if (diff > 0) trend = 'up';
+      else if (diff < 0) trend = 'down';
+
+      return {
+        current: {
+          monthKey: currentKey,
+          total: currentTotal,
+          count: currentCount,
+          avgPerRecord: currentAvg,
+          daysInMonth: daysInCurrentMonth
+        },
+        previous: {
+          monthKey: prevKey,
+          total: prevTotal,
+          count: prevCount,
+          avgPerRecord: prevAvg
+        },
+        diff: diff,
+        diffPercent: diffPercent,
+        trend: trend
+      };
+    },
+
+    /**
+     * 获取某月各分类消费统计（用于日历详情页）
+     * @param {number} year
+     * @param {number} month
+     * @returns {Array} [{categoryId, categoryName, categoryIcon, total, count, percent}]
+     */
+    getMonthCategoryStats: function (year, month) {
+      const monthKey = year + '-' + String(month).padStart(2, '0');
+      const records = App.Records.getByMonth(monthKey);
+      const total = records.reduce((sum, r) => sum + Number(r.amount), 0);
+
+      const catMap = {};
+      records.forEach(r => {
+        if (!catMap[r.categoryId]) {
+          catMap[r.categoryId] = {
+            categoryId: r.categoryId,
+            categoryName: r.categoryName,
+            categoryIcon: r.categoryIcon,
+            total: 0,
+            count: 0
+          };
+        }
+        catMap[r.categoryId].total += Number(r.amount);
+        catMap[r.categoryId].count += 1;
+      });
+
+      return Object.values(catMap)
+        .map(c => ({
+          ...c,
+          percent: total > 0 ? Math.round(c.total / total * 100) : 0
+        }))
+        .sort((a, b) => b.total - a.total);
+    }
+  };
+
   return App;
 });
 
@@ -4215,6 +4576,192 @@
       }
 
       window.BillsUI = { init, render, openDetail, closeDetail, changeMonth, setMood, deleteRecord };
+
+      // ===== 日历视图 =====
+      (function () {
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth() + 1;
+        let isCalendarView = false;
+
+        const calendarContainer = document.getElementById('billsCalendarContainer');
+        const listContainer = document.getElementById('billsListContainer');
+        const viewToggleBtn = document.getElementById('billsViewToggle');
+        const dayOverlay = document.getElementById('calendarDayOverlay');
+        const dayBackBtn = document.getElementById('calendarDayBack');
+        const dayTitle = document.getElementById('calendarDayTitle');
+        const dayTotal = document.getElementById('calendarDayTotal');
+        const dayCount = document.getElementById('calendarDayCount');
+        const dayRecords = document.getElementById('calendarDayRecords');
+
+        function render() {
+          if (!isCalendarView) return;
+          const calData = App.Calendar.getMonthCalendar(currentYear, currentMonth);
+          const comparison = App.Calendar.getMonthComparison(currentYear, currentMonth);
+
+          const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+
+          let html = '<div class="calendar-container">';
+
+          // 月消费对比
+          html += '<div class="calendar-comparison">';
+          html += '<div class="calendar-comparison-title">📊 月消费对比</div>';
+          html += '<div class="calendar-comparison-row">';
+          html += '<span class="calendar-comparison-label">本月 (' + calData.monthKey + ')</span>';
+          html += '<span class="calendar-comparison-value">¥' + App.Utils.formatMoney(comparison.current.total) + '</span>';
+          html += '</div>';
+          html += '<div class="calendar-comparison-row">';
+          html += '<span class="calendar-comparison-label">上月 (' + comparison.previous.monthKey + ')</span>';
+          html += '<span class="calendar-comparison-value">¥' + App.Utils.formatMoney(comparison.previous.total) + '</span>';
+          html += '</div>';
+          html += '<div class="calendar-comparison-row">';
+          html += '<span class="calendar-comparison-label">环比变化</span>';
+          let diffText = '';
+          let diffClass = 'equal';
+          if (comparison.trend === 'up') {
+            diffText = '↑ +¥' + App.Utils.formatMoney(comparison.diff) + ' (' + comparison.diffPercent + '%)';
+            diffClass = 'up';
+          } else if (comparison.trend === 'down') {
+            diffText = '↓ -¥' + App.Utils.formatMoney(Math.abs(comparison.diff)) + ' (' + comparison.diffPercent + '%)';
+            diffClass = 'down';
+          } else {
+            diffText = '持平';
+          }
+          html += '<span class="calendar-comparison-diff ' + diffClass + '">' + diffText + '</span>';
+          html += '</div>';
+          html += '</div>';
+
+          // 日历网格
+          html += '<div class="calendar-grid">';
+          html += '<div class="calendar-weekdays">';
+          weekdays.forEach((w, i) => {
+            const weekendClass = (i === 0 || i === 6) ? ' weekend' : '';
+            html += '<div class="calendar-weekday' + weekendClass + '">' + w + '</div>';
+          });
+          html += '</div>';
+
+          html += '<div class="calendar-days">';
+          calData.weeks.forEach(week => {
+            week.forEach(day => {
+              if (day === null) {
+                html += '<div class="calendar-day empty"></div>';
+              } else {
+                let dayClass = 'calendar-day';
+                if (day.hasRecords) dayClass += ' has-records';
+                if (day.isToday) dayClass += ' is-today';
+                html += '<div class="' + dayClass + '" data-date="' + day.date + '">';
+                html += '<span class="calendar-day-number">' + day.day + '</span>';
+                if (day.hasRecords) {
+                  html += '<span class="calendar-day-amount">¥' + App.Utils.formatMoney(day.amount) + '</span>';
+                }
+                html += '</div>';
+              }
+            });
+          });
+          html += '</div>';
+
+          // 月汇总
+          html += '<div class="calendar-month-summary">';
+          html += '<span class="calendar-summary-label">本月共 ' + calData.recordCount + ' 笔消费</span>';
+          html += '<span class="calendar-summary-value">¥' + App.Utils.formatMoney(calData.monthTotal) + '</span>';
+          html += '</div>';
+
+          html += '</div></div>';
+
+          calendarContainer.innerHTML = html;
+
+          // 绑定日期点击
+          calendarContainer.querySelectorAll('.calendar-day:not(.empty)').forEach(el => {
+            el.addEventListener('click', () => {
+              openDayDetail(el.dataset.date);
+            });
+          });
+        }
+
+        function toggleView() {
+          isCalendarView = !isCalendarView;
+          if (isCalendarView) {
+            listContainer.style.display = 'none';
+            calendarContainer.style.display = 'block';
+            viewToggleBtn.classList.add('active');
+            viewToggleBtn.textContent = '📋';
+            render();
+          } else {
+            listContainer.style.display = 'block';
+            calendarContainer.style.display = 'none';
+            viewToggleBtn.classList.remove('active');
+            viewToggleBtn.textContent = '📅';
+            if (window.BillsUI) window.BillsUI.render();
+          }
+        }
+
+        function changeMonth(delta) {
+          currentMonth += delta;
+          if (currentMonth > 12) {
+            currentMonth = 1;
+            currentYear++;
+          } else if (currentMonth < 1) {
+            currentMonth = 12;
+            currentYear--;
+          }
+          // 同步更新账单页面的月份显示
+          const monthText = document.getElementById('billsMonthText');
+          if (monthText) monthText.textContent = currentYear + '年' + currentMonth + '月';
+          render();
+        }
+
+        function openDayDetail(date) {
+          const detail = App.Calendar.getDayDetail(date);
+          const [y, m, d] = date.split('-');
+          dayTitle.textContent = parseInt(m) + '月' + parseInt(d) + '日 消费详情';
+          dayTotal.textContent = App.Utils.formatMoney(detail.total);
+          dayCount.textContent = '共 ' + detail.count + ' 笔消费';
+
+          if (detail.records.length === 0) {
+            dayRecords.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light);font-size:14px;">这天没有消费记录 🐱</div>';
+          } else {
+            let html = '';
+            detail.records.forEach(r => {
+              html += '<div class="bill-item" style="display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">';
+              html += '<div class="bill-icon" style="width:40px;height:40px;border-radius:50%;background:rgba(255,140,66,0.1);display:flex;align-items:center;justify-content:center;font-size:20px;margin-right:12px;">' + r.categoryIcon + '</div>';
+              html += '<div style="flex:1;">';
+              html += '<div style="font-size:14px;font-weight:500;">' + r.categoryName + '</div>';
+              html += '<div style="font-size:12px;color:var(--text-light);">' + r.time + (r.note ? ' · ' + r.note : '') + '</div>';
+              html += '</div>';
+              html += '<div style="font-size:16px;font-weight:600;color:var(--primary);">¥' + App.Utils.formatMoney(r.amount) + '</div>';
+              html += '</div>';
+            });
+            dayRecords.innerHTML = html;
+          }
+
+          dayOverlay.classList.add('active');
+        }
+
+        function closeDayDetail() {
+          dayOverlay.classList.remove('active');
+        }
+
+        function init() {
+          viewToggleBtn.addEventListener('click', toggleView);
+          dayBackBtn.addEventListener('click', closeDayDetail);
+
+          // 复用账单页面的月份切换按钮
+          const prevBtn = document.getElementById('billsPrevMonth');
+          const nextBtn = document.getElementById('billsNextMonth');
+          if (prevBtn) prevBtn.addEventListener('click', () => { if (isCalendarView) changeMonth(-1); });
+          if (nextBtn) nextBtn.addEventListener('click', () => { if (isCalendarView) changeMonth(1); });
+
+          window.addEventListener('page:show', (e) => {
+            if (e.detail.pageId === 'page-bills' && isCalendarView) render();
+          });
+        }
+
+        window.CalendarUI = { init, render, toggleView, changeMonth, openDayDetail, closeDayDetail };
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init);
+        } else {
+          init();
+        }
+      })();
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
       } else {
