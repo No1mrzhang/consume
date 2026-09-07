@@ -127,6 +127,51 @@ describe('阶段11 - 时间解析 Utils.parseTimeText', function () {
     const result = App.Utils.parseTimeText('吃饭25元');
     assert.strictEqual(result, null);
   });
+
+  test('解析中文数字"三点四十"', function () {
+    const result = App.Utils.parseTimeText('三点四十吃饭25元');
+    assert.strictEqual(result, '03:40');
+  });
+
+  test('解析中文数字"三点半"', function () {
+    const result = App.Utils.parseTimeText('三点半吃饭25元');
+    assert.strictEqual(result, '03:30');
+  });
+
+  test('解析中文数字"八点"', function () {
+    const result = App.Utils.parseTimeText('八点吃饭25元');
+    assert.strictEqual(result, '08:00');
+  });
+
+  test('解析"下午三点四十"转24小时制', function () {
+    const result = App.Utils.parseTimeText('下午三点四十吃饭25元');
+    assert.strictEqual(result, '15:40');
+  });
+
+  test('解析"晚上九点半"转24小时制', function () {
+    const result = App.Utils.parseTimeText('晚上九点半吃饭25元');
+    assert.strictEqual(result, '21:30');
+  });
+
+  test('解析"早上八点十五分"', function () {
+    const result = App.Utils.parseTimeText('早上八点十五分吃饭25元');
+    assert.strictEqual(result, '08:15');
+  });
+
+  test('解析"中午十二点"', function () {
+    const result = App.Utils.parseTimeText('中午十二点吃饭25元');
+    assert.strictEqual(result, '12:00');
+  });
+
+  test('chineseToNumber转换正确', function () {
+    assert.strictEqual(App.Utils.chineseToNumber('一'), 1);
+    assert.strictEqual(App.Utils.chineseToNumber('十'), 10);
+    assert.strictEqual(App.Utils.chineseToNumber('十一'), 11);
+    assert.strictEqual(App.Utils.chineseToNumber('二十'), 20);
+    assert.strictEqual(App.Utils.chineseToNumber('二十三'), 23);
+    assert.strictEqual(App.Utils.chineseToNumber('四十'), 40);
+    assert.strictEqual(App.Utils.chineseToNumber('两'), 2);
+  });
 });
 
 describe('阶段11 - 日期时间组合 Utils.combineDateTime', function () {

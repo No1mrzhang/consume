@@ -63,6 +63,31 @@
     },
 
     /**
+     * 中文数字转阿拉伯数字
+     * 支持：一~九、十、十一~十九、二十~九十九
+     * @param {string} str - 中文数字字符串
+     * @returns {number|null} - 数字或null
+     */
+    chineseToNumber: function (str) {
+      if (!str) return null;
+      const digits = { '零': 0, '〇': 0, '一': 1, '二': 2, '两': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9 };
+      if (str === '十') return 10;
+      if (str.charAt(0) === '十') {
+        // 十一~十九
+        return 10 + (digits[str.charAt(1)] || 0);
+      }
+      if (str.indexOf('十') >= 0) {
+        // 二十~九十九
+        const parts = str.split('十');
+        const tens = digits[parts[0]] || 0;
+        const ones = parts[1] ? (digits[parts[1]] || 0) : 0;
+        return tens * 10 + ones;
+      }
+      // 单个数字
+      return digits[str] !== undefined ? digits[str] : null;
+    },
+
+    /**
      * 解析日期文本 -> YYYY-MM-DD
      * 支持：今天/昨天/前天/大前天、5月1日、5/1、5.1、2025-05-01、2025年5月1日
      * @param {string} text - 输入文本
@@ -167,6 +192,36 @@
         } else if (periodMatch[4]) {
           mi = parseInt(periodMatch[4]);
         }
+
+        // 时段调整
+        if ((period === '下午' || period === '晚上' || period === '傍晚' || period === '夜晚') && h < 12) {
+          h += 12;
+        }
+        if (period === '中午' && h < 12) {
+          h = 12;
+        }
+        if (period === '凌晨' && h === 12) {
+          h = 0;
+        }
+
+        if (h >= 0 && h <= 23 && mi >= 0 && mi <= 59) {
+          return String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0');
+        }
+      }
+
+      // 中文数字时间：三点四十 / 三点半 / 下午三点 / 早上八点十五分
+      const cnMatch = text.match(/(凌晨|早上|上午|中午|下午|晚上|傍晚|夜晚)?([一二两三四五六七八九十]+)点(半|([一二两三四五六七八九十]+)分?)?/);
+      if (cnMatch) {
+        let h = App.Utils.chineseToNumber(cnMatch[2]);
+        const period = cnMatch[1] || '';
+        let mi = 0;
+        if (cnMatch[3] === '半') {
+          mi = 30;
+        } else if (cnMatch[4]) {
+          mi = App.Utils.chineseToNumber(cnMatch[4]);
+        }
+
+        if (h === null || mi === null) return null;
 
         // 时段调整
         if ((period === '下午' || period === '晚上' || period === '傍晚' || period === '夜晚') && h < 12) {
