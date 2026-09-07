@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Gradle / Android build
+.gradle/
+android/.gradle/
+android/app/build/
+android/build/
+android/captures/
+android/local.properties
+android/.cxx/
+
+# APK / AAB
+*.apk
+*.aab
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+*.log
+*.tmp

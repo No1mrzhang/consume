@@ -1,0 +1,5144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#FFF8F0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>记账小猫</title>
+  <style>
+    /* === CSS 变量 === */
+    :root {
+      --bg-cream: #FFF8F0;
+      --primary: #FF8C42;
+      --primary-dark: #E6732B;
+      --primary-light: #FFA968;
+      --success: #7BC8A4;
+      --info: #6BB6E8;
+      --warning: #FFD166;
+      --danger: #FF6B6B;
+      --text: #4A3F35;
+      --text-light: #9B8E82;
+      --card: #FFFFFF;
+      --border: #F0E6D9;
+      --radius-card: 16px;
+      --radius-bubble: 20px;
+      --radius-btn: 12px;
+      --shadow-soft: 0 2px 12px rgba(255, 140, 66, 0.08);
+      --shadow-card: 0 4px 16px rgba(255, 140, 66, 0.1);
+    }
+
+    /* === 全局重置 === */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg-cream);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* === APP 容器 === */
+    .app-container {
+      max-width: 520px;
+      margin: 0 auto;
+      min-height: 100vh;
+      position: relative;
+      padding-bottom: 70px;
+      background: var(--bg-cream);
+    }
+
+    /* === 页面切换 === */
+    .page {
+      display: none;
+      min-height: calc(100vh - 70px);
+    }
+    .page.active {
+      display: block;
+      animation: pageFadeIn 0.25s ease;
+    }
+    @keyframes pageFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* === 底部导航 === */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 520px;
+      height: 64px;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-light);
+      transition: color 0.2s;
+      gap: 2px;
+    }
+    .nav-item .nav-icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+    .nav-item .nav-label {
+      font-size: 11px;
+    }
+    .nav-item.active {
+      color: var(--primary);
+    }
+
+    /* === 通用组件 === */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      padding: 16px;
+      box-shadow: var(--shadow-soft);
+      margin: 12px 16px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      border-radius: var(--radius-btn);
+      border: none;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:active {
+      background: var(--primary-dark);
+      transform: scale(0.97);
+    }
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    /* === 弹窗 === */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(74, 63, 53, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 24px;
+    }
+    .modal-overlay.show {
+      display: flex;
+    }
+    .modal {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      padding: 24px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: var(--shadow-card);
+      animation: modalIn 0.25s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.9) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .modal-content {
+      color: var(--text-light);
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .modal-actions .btn {
+      flex: 1;
+    }
+
+    /* === 撒花层 === */
+    .confetti-container {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 9999;
+      overflow: hidden;
+    }
+    .confetti-piece {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      animation: confettiFall linear forwards;
+    }
+    @keyframes confettiFall {
+      0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* === 聊天首页 === */
+    #page-chat {
+      display: none;
+      flex-direction: column;
+      height: calc(100vh - 64px);
+      padding-bottom: 0;
+    }
+    #page-chat.active {
+      display: flex;
+    }
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .chat-pet-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .chat-pet-avatar {
+      font-size: 32px;
+      line-height: 1;
+    }
+    .chat-pet-meta {
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-pet-name {
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .chat-pet-mood {
+      font-size: 12px;
+      color: var(--text-light);
+    }
+    .chat-today-total {
+      font-size: 13px;
+      color: var(--primary);
+      font-weight: 600;
+      background: rgba(255, 140, 66, 0.1);
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .chat-msg {
+      display: flex;
+      max-width: 78%;
+      animation: bubbleIn 0.25s ease;
+    }
+    .chat-msg-left {
+      align-self: flex-start;
+    }
+    .chat-msg-right {
+      align-self: flex-end;
+    }
+    .chat-msg-avatar {
+      font-size: 24px;
+      margin-right: 8px;
+      flex-shrink: 0;
+      align-self: flex-end;
+    }
+    .chat-bubble {
+      padding: 10px 14px;
+      border-radius: var(--radius-bubble);
+      font-size: 14px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .chat-bubble-left {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      color: var(--text);
+    }
+    .chat-bubble-right {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-msg-time {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-top: 2px;
+      padding: 0 4px;
+    }
+    .chat-quick-cats {
+      display: flex;
+      gap: 8px;
+      padding: 8px 16px;
+      overflow-x: auto;
+      flex-shrink: 0;
+      background: var(--bg-cream);
+      border-top: 1px solid var(--border);
+    }
+    .chat-quick-cats::-webkit-scrollbar {
+      display: none;
+    }
+    .quick-cat-tag {
+      flex-shrink: 0;
+      padding: 6px 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .quick-cat-tag.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .chat-input-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    }
+    .chat-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 14px;
+      font-family: inherit;
+      background: var(--bg-cream);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .chat-input:focus {
+      border-color: var(--primary);
+    }
+    .chat-send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .chat-send-btn:active {
+      background: var(--primary-dark);
+      transform: scale(0.92);
+    }
+
+    /* === 概览页 === */
+    .overview-header {
+      padding: 20px 16px 12px;
+      text-align: center;
+    }
+    .overview-today-label {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+    .overview-today-amount {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .overview-today-amount .currency {
+      font-size: 20px;
+      font-weight: 500;
+    }
+    .overview-today-count {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 4px;
+    }
+    .budget-card {
+      margin: 0 16px 12px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      border-radius: var(--radius-card);
+      padding: 16px;
+      color: #fff;
+      box-shadow: var(--shadow-card);
+    }
+    .budget-card-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .budget-card-item {
+      text-align: center;
+      flex: 1;
+    }
+    .budget-card-item .label {
+      font-size: 11px;
+      opacity: 0.9;
+    }
+    .budget-card-item .value {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .budget-progress {
+      height: 8px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .budget-progress-bar {
+      height: 100%;
+      background: #fff;
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+    .budget-progress-text {
+      font-size: 11px;
+      text-align: right;
+      margin-top: 4px;
+      opacity: 0.9;
+    }
+    .quick-record-section {
+      margin: 0 16px 12px;
+    }
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .quick-record-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .quick-record-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      padding: 12px 4px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .quick-record-btn:active {
+      transform: scale(0.95);
+      background: var(--bg-cream);
+    }
+    .quick-record-btn .qr-icon {
+      font-size: 24px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .quick-record-btn .qr-name {
+      font-size: 12px;
+      color: var(--text);
+    }
+    .pet-mini-card {
+      margin: 0 16px 12px;
+      background: var(--card);
+      border-radius: var(--radius-card);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-soft);
+      cursor: pointer;
+    }
+    .pet-mini-avatar {
+      font-size: 36px;
+    }
+    .pet-mini-info {
+      flex: 1;
+    }
+    .pet-mini-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .pet-mini-desc {
+      font-size: 12px;
+      color: var(--text-light);
+    }
+    .pet-mini-arrow {
+      color: var(--text-light);
+      font-size: 18px;
+    }
+    .recent-section {
+      margin: 0 16px 12px;
+    }
+    .recent-list {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+    .recent-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .recent-item:last-child {
+      border-bottom: none;
+    }
+    .recent-item:active {
+      background: var(--bg-cream);
+    }
+    .recent-icon {
+      font-size: 22px;
+      margin-right: 10px;
+      width: 32px;
+      text-align: center;
+    }
+    .recent-info {
+      flex: 1;
+    }
+    .recent-name {
+      font-size: 14px;
+      color: var(--text);
+    }
+    .recent-time {
+      font-size: 11px;
+      color: var(--text-light);
+    }
+    .recent-amount {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--danger);
+    }
+    .chart-section {
+      margin: 0 16px 20px;
+    }
+    .chart-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .chart-tab {
+      flex: 1;
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--text-light);
+      transition: all 0.2s;
+    }
+    .chart-tab.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .chart-container {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      padding: 12px;
+      box-shadow: var(--shadow-soft);
+      text-align: center;
+    }
+    .chart-container canvas {
+      max-width: 100%;
+      height: auto;
+    }
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--text-light);
+    }
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* === 账单页 === */
+    .bills-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+    .month-selector {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .month-arrow {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--bg-cream);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .month-arrow:active {
+      background: var(--border);
+    }
+    .month-text {
+      font-size: 16px;
+      font-weight: 600;
+      min-width: 90px;
+      text-align: center;
+    }
+    .bills-total {
+      font-size: 14px;
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .bills-filter-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+      background: var(--bg-cream);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      color: var(--text);
+    }
+    .bill-date-group {
+      margin: 12px 16px 0;
+    }
+    .bill-date-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 4px;
+      font-size: 13px;
+      color: var(--text-light);
+    }
+    .bill-date-total {
+      font-weight: 600;
+      color: var(--text);
+    }
+    .bill-list {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+    .bill-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .bill-item:last-child {
+      border-bottom: none;
+    }
+    .bill-item:active {
+      background: var(--bg-cream);
+    }
+    .bill-icon {
+      font-size: 22px;
+      margin-right: 10px;
+      width: 32px;
+      text-align: center;
+    }
+    .bill-info {
+      flex: 1;
+    }
+    .bill-name {
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .bill-mood {
+      font-size: 12px;
+    }
+    .bill-note-icon {
+      font-size: 11px;
+      color: var(--text-light);
+    }
+    .bill-time {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-top: 2px;
+    }
+    .bill-amount {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--danger);
+    }
+    .bills-empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-light);
+    }
+    .bills-empty .empty-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    /* === 账单详情页（覆盖层） === */
+    .detail-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg-cream);
+      z-index: 200;
+      display: none;
+      flex-direction: column;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .detail-overlay.show {
+      display: flex;
+    }
+    .detail-header {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+    .detail-back {
+      font-size: 22px;
+      cursor: pointer;
+      margin-right: 12px;
+      color: var(--text);
+    }
+    .detail-title {
+      font-size: 16px;
+      font-weight: 600;
+      flex: 1;
+    }
+    .detail-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .detail-amount-section {
+      text-align: center;
+      padding: 24px 0;
+    }
+    .detail-amount {
+      font-size: 40px;
+      font-weight: 700;
+      color: var(--danger);
+    }
+    .detail-amount .currency {
+      font-size: 22px;
+    }
+    .detail-field {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow-soft);
+    }
+    .detail-field-label {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+    .detail-field-value {
+      font-size: 15px;
+      color: var(--text);
+    }
+    .detail-note-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      background: var(--bg-cream);
+      outline: none;
+      resize: vertical;
+      min-height: 60px;
+    }
+    .detail-note-input:focus {
+      border-color: var(--primary);
+    }
+    .mood-selector {
+      display: flex;
+      gap: 8px;
+    }
+    .mood-btn {
+      flex: 1;
+      padding: 10px 4px;
+      text-align: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg-cream);
+      cursor: pointer;
+      font-size: 20px;
+      transition: all 0.2s;
+    }
+    .mood-btn.active {
+      border-color: var(--primary);
+      background: rgba(255, 140, 66, 0.1);
+      transform: scale(1.05);
+    }
+    .mood-btn .mood-label {
+      display: block;
+      font-size: 10px;
+      color: var(--text-light);
+      margin-top: 2px;
+    }
+    .detail-delete-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--danger);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-btn);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .detail-delete-btn:active {
+      opacity: 0.8;
+    }
+
+    /* === 设置页（我的） === */
+    .settings-header {
+      padding: 24px 16px 16px;
+      text-align: center;
+    }
+    .settings-avatar {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+    .settings-name {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .settings-desc {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 2px;
+    }
+    .settings-group {
+      margin: 0 16px 12px;
+      background: var(--card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+    .settings-group-title {
+      font-size: 12px;
+      color: var(--text-light);
+      padding: 10px 16px 4px;
+    }
+    .settings-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .settings-item:last-child {
+      border-bottom: none;
+    }
+    .settings-item:active {
+      background: var(--bg-cream);
+    }
+    .settings-item-icon {
+      font-size: 20px;
+      margin-right: 12px;
+      width: 28px;
+      text-align: center;
+    }
+    .settings-item-label {
+      flex: 1;
+      font-size: 14px;
+    }
+    .settings-item-value {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-right: 6px;
+    }
+    .settings-item-arrow {
+      color: var(--text-light);
+      font-size: 16px;
+    }
+    /* 开关 */
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: #ddd;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-switch.on {
+      background: var(--primary);
+    }
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle-switch.on::after {
+      transform: translateX(20px);
+    }
+
+    /* === 分类管理页 === */
+    .cat-manage-list {
+      padding: 0 16px;
+    }
+    .cat-manage-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 14px;
+      background: var(--card);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      box-shadow: var(--shadow-soft);
+    }
+    .cat-manage-icon {
+      font-size: 22px;
+      margin-right: 10px;
+      width: 32px;
+      text-align: center;
+    }
+    .cat-manage-name {
+      flex: 1;
+      font-size: 14px;
+    }
+    .cat-manage-tag {
+      font-size: 10px;
+      color: var(--text-light);
+      background: var(--bg-cream);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-right: 8px;
+    }
+    .cat-manage-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .cat-manage-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-cream);
+      cursor: pointer;
+      color: var(--text);
+    }
+    .cat-manage-btn.danger {
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+    .cat-add-btn {
+      margin: 12px 16px;
+      padding: 12px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-btn);
+      font-size: 14px;
+      cursor: pointer;
+      width: calc(100% - 32px);
+    }
+    .emoji-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .emoji-option {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      background: var(--bg-cream);
+    }
+    .emoji-option.selected {
+      border-color: var(--primary);
+      background: rgba(255, 140, 66, 0.1);
+    }
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      background: var(--bg-cream);
+      outline: none;
+    }
+    .form-input:focus {
+      border-color: var(--primary);
+    }
+    .form-label {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    /* === 预算管理页 === */
+    .budget-manage-current {
+      text-align: center;
+      padding: 20px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      border-radius: var(--radius-card);
+      margin: 0 16px 16px;
+      color: #fff;
+    }
+    .budget-manage-current .label {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    .budget-manage-current .amount {
+      font-size: 32px;
+      font-weight: 700;
+    }
+    .budget-manage-stats {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 12px;
+      font-size: 12px;
+    }
+
+    /* === 宠物页 === */
+    .pet-showcase {
+      margin: 16px;
+      background: linear-gradient(135deg, #FFF5EB, #FFE8D6);
+      border-radius: 20px;
+      padding: 24px 16px;
+      text-align: center;
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+    }
+    .pet-avatar-large {
+      font-size: 80px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-block;
+      transition: transform 0.2s;
+      user-select: none;
+    }
+    .pet-avatar-large:active {
+      transform: scale(0.9);
+    }
+    .pet-avatar-large.bounce {
+      animation: petBounce 0.5s ease;
+    }
+    @keyframes petBounce {
+      0%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-12px) scale(1.1); }
+      60% { transform: translateY(0) scale(0.95); }
+    }
+    .pet-name-display {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 8px;
+      color: var(--text);
+    }
+    .pet-level-badge {
+      display: inline-block;
+      background: var(--primary);
+      color: #fff;
+      font-size: 12px;
+      padding: 2px 10px;
+      border-radius: 10px;
+      margin-top: 4px;
+    }
+    .pet-mood-display {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-top: 6px;
+    }
+    .pet-exp-section {
+      margin-top: 14px;
+      text-align: left;
+    }
+    .pet-exp-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+    .pet-exp-bar {
+      height: 10px;
+      background: rgba(255, 140, 66, 0.15);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .pet-exp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      border-radius: 5px;
+      transition: width 0.3s;
+    }
+    .pet-interact-tip {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-top: 8px;
+      opacity: 0.7;
+    }
+    .pet-speech-bubble {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      padding: 8px 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      color: var(--text);
+      box-shadow: var(--shadow-soft);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .pet-speech-bubble.show {
+      opacity: 1;
+    }
+    .pet-speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 6px solid #fff;
+    }
+    .pet-actions {
+      display: flex;
+      gap: 8px;
+      margin: 0 16px 12px;
+    }
+    .pet-action-btn {
+      flex: 1;
+      padding: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text);
+      text-align: center;
+    }
+    .pet-action-btn:active {
+      background: var(--bg-cream);
+    }
+
+    /* === 徽章墙 === */
+    .badge-wall {
+      margin: 0 16px 12px;
+    }
+    .badge-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .badge-item {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 10px 4px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: var(--shadow-soft);
+      transition: transform 0.2s;
+      position: relative;
+    }
+    .badge-item:active {
+      transform: scale(0.95);
+    }
+    .badge-item.locked {
+      opacity: 0.4;
+      filter: grayscale(1);
+    }
+    .badge-icon {
+      font-size: 28px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .badge-name {
+      font-size: 10px;
+      color: var(--text);
+      line-height: 1.2;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .badge-category-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+      overflow-x: auto;
+    }
+    .badge-category-tab {
+      flex-shrink: 0;
+      padding: 4px 10px;
+      font-size: 11px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      color: var(--text-light);
+    }
+    .badge-category-tab.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* === 打卡日历 === */
+    .checkin-card {
+      margin: 0 16px 12px;
+      background: var(--card);
+      border-radius: var(--radius-card);
+      padding: 16px;
+      box-shadow: var(--shadow-soft);
+    }
+    .checkin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .checkin-streak {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .checkin-fire {
+      font-size: 32px;
+    }
+    .checkin-days {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .checkin-title {
+      font-size: 11px;
+      color: var(--text-light);
+    }
+    .checkin-badge {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .checkin-badge.normal { background: #f0f0f0; color: #999; }
+    .checkin-badge.blue { background: rgba(107,182,232,0.15); color: #6BB6E8; }
+    .checkin-badge.purple { background: rgba(176,136,249,0.15); color: #B088F9; }
+    .checkin-badge.gold { background: rgba(255,209,102,0.2); color: #E6A817; }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .calendar-day-header {
+      text-align: center;
+      font-size: 10px;
+      color: var(--text-light);
+      padding: 4px 0;
+    }
+    .calendar-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      border-radius: 50%;
+      color: var(--text-light);
+    }
+    .calendar-day.checked {
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+    }
+    .calendar-day.today {
+      border: 2px solid var(--primary);
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .calendar-day.empty {
+      visibility: hidden;
+    }
+
+    /* === 省钱挑战 === */
+    .challenge-list {
+      margin: 0 16px 12px;
+    }
+    .challenge-item {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      padding: 12px;
+      margin-bottom: 8px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .challenge-icon {
+      font-size: 32px;
+      flex-shrink: 0;
+    }
+    .challenge-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .challenge-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .challenge-desc {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-top: 2px;
+    }
+    .challenge-progress-bar {
+      height: 6px;
+      background: rgba(255, 140, 66, 0.15);
+      border-radius: 3px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .challenge-progress-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+    .challenge-detail {
+      font-size: 10px;
+      color: var(--text-light);
+      margin-top: 4px;
+    }
+    .challenge-status {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .challenge-status.not_joined { background: #f0f0f0; color: #999; }
+    .challenge-status.active { background: rgba(255, 140, 66, 0.15); color: var(--primary); }
+    .challenge-status.completed { background: rgba(76, 175, 80, 0.15); color: #4CAF50; }
+    .challenge-status.failed { background: rgba(244, 67, 54, 0.15); color: #F44336; }
+    .challenge-join-btn {
+      font-size: 11px;
+      padding: 5px 12px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .challenge-join-btn:active { opacity: 0.8; }
+
+    /* === 存钱罐 === */
+    .piggy-card {
+      margin: 0 16px 12px;
+      background: linear-gradient(135deg, #FFF5EB, #FFE8D6);
+      border-radius: var(--radius-card);
+      padding: 16px;
+      box-shadow: var(--shadow-soft);
+      text-align: center;
+    }
+    .piggy-icon {
+      font-size: 48px;
+      display: block;
+      margin-bottom: 8px;
+    }
+    .piggy-amount {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .piggy-target {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 2px;
+    }
+    .piggy-progress-bar {
+      height: 10px;
+      background: rgba(255, 140, 66, 0.15);
+      border-radius: 5px;
+      margin: 10px 0;
+      overflow: hidden;
+    }
+    .piggy-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      border-radius: 5px;
+      transition: width 0.3s;
+    }
+    .piggy-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .piggy-btn {
+      flex: 1;
+      padding: 8px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .piggy-btn:active { background: var(--bg-cream); }
+    .piggy-btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* === 消费心情统计 === */
+    .mood-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .mood-stat-item {
+      text-align: center;
+      padding: 8px 4px;
+      background: var(--bg-cream);
+      border-radius: 10px;
+    }
+    .mood-stat-icon {
+      font-size: 24px;
+      display: block;
+    }
+    .mood-stat-count {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin-top: 2px;
+    }
+    .mood-stat-label {
+      font-size: 10px;
+      color: var(--text-light);
+    }
+    .mood-impulse-analysis {
+      background: rgba(255, 140, 66, 0.1);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .mood-impulse-analysis b {
+      color: var(--primary);
+    }
+
+    /* === 壁纸预览 === */
+    .wallpaper-preview-wrap {
+      text-align: center;
+    }
+    .wallpaper-preview-img {
+      max-width: 100%;
+      max-height: 60vh;
+      border-radius: 12px;
+      box-shadow: var(--shadow-soft);
+    }
+    .wallpaper-preview-tip {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-top: 8px;
+    }
+
+    /* === 数据管理 === */
+    .data-manage-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      background: var(--card);
+      border-radius: var(--radius-card);
+      margin-bottom: 10px;
+      cursor: pointer;
+      box-shadow: var(--shadow-soft);
+      transition: transform 0.1s;
+    }
+    .data-manage-item:active {
+      transform: scale(0.98);
+    }
+    .data-manage-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+    .data-manage-info {
+      flex: 1;
+    }
+    .data-manage-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .data-manage-desc {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+    .data-manage-tip {
+      font-size: 11px;
+      color: var(--text-light);
+      text-align: center;
+      margin-top: 16px;
+      line-height: 1.5;
+    }
+
+    /* === 页面占位（后续阶段填充） === */
+    .page-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      color: var(--text-light);
+      gap: 8px;
+    }
+    .page-placeholder .ph-icon {
+      font-size: 48px;
+      opacity: 0.5;
+    }
+    .page-placeholder .ph-text {
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container" id="app">
+    <!-- Tab 1: 记账（聊天首页） -->
+    <div class="page active" id="page-chat">
+      <div class="chat-header">
+        <div class="chat-pet-info" id="chatPetInfo">
+          <span class="chat-pet-avatar" id="chatPetAvatar">🥚</span>
+          <div class="chat-pet-meta">
+            <span class="chat-pet-name" id="chatPetName">小橘</span>
+            <span class="chat-pet-mood" id="chatPetMood">😺 状态很好</span>
+          </div>
+        </div>
+        <div class="chat-today-total" id="chatTodayTotal">今日 ¥0</div>
+      </div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-quick-cats" id="chatQuickCats"></div>
+      <div class="chat-input-area">
+        <input type="text" class="chat-input" id="chatInput" placeholder="记一笔，如：吃饭 25 元" autocomplete="off">
+        <button class="chat-send-btn" id="chatSendBtn">➤</button>
+      </div>
+    </div>
+
+    <!-- Tab 2: 概览 -->
+    <div class="page" id="page-overview">
+      <div class="overview-header">
+        <div class="overview-today-label">今日总开销</div>
+        <div class="overview-today-amount"><span class="currency">¥</span><span id="overviewTodayAmount">0</span></div>
+        <div class="overview-today-count" id="overviewTodayCount">今日 0 笔</div>
+      </div>
+      <div class="budget-card" id="overviewBudgetCard">
+        <div class="budget-card-row">
+          <div class="budget-card-item">
+            <div class="label">本月已花</div>
+            <div class="value" id="budgetUsed">¥0</div>
+          </div>
+          <div class="budget-card-item">
+            <div class="label">剩余预算</div>
+            <div class="value" id="budgetRemaining">¥1200</div>
+          </div>
+          <div class="budget-card-item">
+            <div class="label">月度预算</div>
+            <div class="value" id="budgetTotal">¥1200</div>
+          </div>
+        </div>
+        <div class="budget-progress">
+          <div class="budget-progress-bar" id="budgetProgressBar" style="width:0%"></div>
+        </div>
+        <div class="budget-progress-text" id="budgetProgressText">已使用 0%</div>
+      </div>
+      <div class="quick-record-section">
+        <div class="section-title">⚡ 快捷记账</div>
+        <div class="quick-record-grid" id="quickRecordGrid"></div>
+      </div>
+      <div class="pet-mini-card" id="overviewPetCard">
+        <div class="pet-mini-avatar" id="overviewPetAvatar">🥚</div>
+        <div class="pet-mini-info">
+          <div class="pet-mini-name" id="overviewPetName">小橘</div>
+          <div class="pet-mini-desc" id="overviewPetDesc">Lv.1 猫蛋 · 状态很好</div>
+        </div>
+        <div class="pet-mini-arrow">›</div>
+      </div>
+      <div class="recent-section">
+        <div class="section-title">🕐 最近消费</div>
+        <div class="recent-list" id="recentList"></div>
+      </div>
+      <div class="chart-section">
+        <div class="section-title">📈 统计图表</div>
+        <div class="chart-tabs">
+          <div class="chart-tab active" data-chart="7day">近7天</div>
+          <div class="chart-tab" data-chart="category">分类占比</div>
+          <div class="chart-tab" data-chart="month">月度趋势</div>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartCanvas" width="440" height="260"></canvas>
+          <div class="chart-legend" id="chartLegend"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: 账单 -->
+    <div class="page" id="page-bills">
+      <div class="bills-header">
+        <div class="month-selector">
+          <div class="month-arrow" id="billsPrevMonth">‹</div>
+          <div class="month-text" id="billsMonthText">2026年9月</div>
+          <div class="month-arrow" id="billsNextMonth">›</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="bills-total" id="billsMonthTotal">¥0</div>
+          <button class="bills-filter-btn" id="billsFilterBtn">全部分类</button>
+        </div>
+      </div>
+      <div id="billsListContainer"></div>
+    </div>
+
+    <!-- 账单详情页（覆盖层） -->
+    <div class="detail-overlay" id="billDetailOverlay">
+      <div class="detail-header">
+        <div class="detail-back" id="detailBackBtn">‹</div>
+        <div class="detail-title">账单详情</div>
+      </div>
+      <div class="detail-body" id="detailBody">
+        <div class="detail-amount-section">
+          <div class="detail-amount"><span class="currency">¥</span><span id="detailAmount">0</span></div>
+        </div>
+        <div class="detail-field">
+          <div class="detail-field-label">分类</div>
+          <div class="detail-field-value" id="detailCategory">餐饮 🍚</div>
+        </div>
+        <div class="detail-field">
+          <div class="detail-field-label">发生时间</div>
+          <div class="detail-field-value" id="detailTime">2026-09-07 12:30</div>
+        </div>
+        <div class="detail-field">
+          <div class="detail-field-label">备注</div>
+          <textarea class="detail-note-input" id="detailNoteInput" placeholder="添加备注..."></textarea>
+        </div>
+        <div class="detail-field">
+          <div class="detail-field-label">心情标签</div>
+          <div class="mood-selector" id="detailMoodSelector">
+            <div class="mood-btn" data-mood="happy">😊<span class="mood-label">开心</span></div>
+            <div class="mood-btn" data-mood="normal">😐<span class="mood-label">一般</span></div>
+            <div class="mood-btn" data-mood="sad">😢<span class="mood-label">难过</span></div>
+            <div class="mood-btn" data-mood="impulse">😤<span class="mood-label">冲动</span></div>
+          </div>
+        </div>
+        <button class="detail-delete-btn" id="detailDeleteBtn">删除这条记录</button>
+      </div>
+    </div>
+
+    <!-- Tab 4: 宠物 -->
+    <div class="page" id="page-pet">
+      <div class="pet-showcase" id="petShowcase">
+        <div class="pet-speech-bubble" id="petSpeechBubble"></div>
+        <div class="pet-avatar-large" id="petAvatarLarge">🥚</div>
+        <div class="pet-name-display" id="petNameDisplay">小橘</div>
+        <div class="pet-level-badge" id="petLevelBadge">Lv.1 猫蛋</div>
+        <div class="pet-mood-display" id="petMoodDisplay">😺 状态很好</div>
+        <div class="pet-exp-section">
+          <div class="pet-exp-label">
+            <span>经验值</span>
+            <span id="petExpText">0 / 50</span>
+          </div>
+          <div class="pet-exp-bar">
+            <div class="pet-exp-fill" id="petExpFill" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="pet-interact-tip">点击宠物和它互动吧～</div>
+      </div>
+      <div class="pet-actions">
+        <div class="pet-action-btn" id="petRenameBtn">✏️ 改名</div>
+        <div class="pet-action-btn" id="petResetBtn" style="color:var(--danger);">🔄 重置</div>
+      </div>
+      <!-- 以下区域后续阶段完善 -->
+      <!-- 连续打卡 -->
+      <div class="checkin-card">
+        <div class="checkin-header">
+          <div class="checkin-streak">
+            <span class="checkin-fire" id="checkinFire">🔥</span>
+            <div>
+              <div class="checkin-days"><span id="checkinDays">0</span> 天</div>
+              <div class="checkin-title">连续记账</div>
+            </div>
+          </div>
+          <div class="checkin-badge normal" id="checkinBadge">继续加油</div>
+        </div>
+        <div class="calendar-grid" id="checkinCalendar"></div>
+      </div>
+
+      <!-- 成就徽章 -->
+      <div class="badge-wall">
+        <div class="section-title" style="margin:0 0 10px;">🏅 成就徽章 <span id="badgeCountText" style="font-size:12px;color:var(--text-light);font-weight:normal;">0 / 20</span></div>
+        <div class="badge-category-tabs" id="badgeCategoryTabs"></div>
+        <div class="badge-grid" id="badgeGrid"></div>
+      </div>
+
+      <!-- 省钱挑战 -->
+      <div class="section-title" style="margin:0 16px 10px;">🏆 省钱挑战</div>
+      <div class="challenge-list" id="challengeList"></div>
+
+      <!-- 存钱罐 -->
+      <div class="section-title" style="margin:0 16px 10px;">🐷 存钱罐</div>
+      <div class="piggy-card" id="piggyCard">
+        <span class="piggy-icon">🐷</span>
+        <div class="piggy-amount" id="piggyCurrent">¥0.00</div>
+        <div class="piggy-target" id="piggyTarget">目标：未设置</div>
+        <div class="piggy-progress-bar">
+          <div class="piggy-progress-fill" id="piggyProgressFill" style="width:0%"></div>
+        </div>
+        <div class="piggy-actions">
+          <button class="piggy-btn primary" id="piggyDepositBtn">存入</button>
+          <button class="piggy-btn" id="piggyWithdrawBtn">取出</button>
+          <button class="piggy-btn" id="piggyTargetBtn">设目标</button>
+        </div>
+      </div>
+
+      <!-- 消费心情统计 -->
+      <div class="section-title" style="margin:0 16px 10px;">💭 消费心情</div>
+      <div class="checkin-card" id="moodStatsCard">
+        <div class="mood-stats-grid" id="moodStatsGrid"></div>
+        <div class="mood-impulse-analysis" id="moodImpulseAnalysis" style="display:none;"></div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">🎨 更多功能</div>
+        <div class="settings-item" id="wallpaperEntry" style="cursor:pointer;">
+          <span class="settings-item-icon">🖼️</span>
+          <span class="settings-item-label">账单壁纸</span>
+          <span class="settings-item-value">生成 ›</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 5: 我的 -->
+    <div class="page" id="page-me">
+      <div class="settings-header">
+        <div class="settings-avatar" id="settingsAvatar">🥚</div>
+        <div class="settings-name" id="settingsName">小橘</div>
+        <div class="settings-desc" id="settingsDesc">Lv.1 猫蛋 · 已记账 0 天</div>
+      </div>
+      <div class="settings-group">
+        <div class="settings-group-title">预算与分类</div>
+        <div class="settings-item" id="settingBudget">
+          <span class="settings-item-icon">🎯</span>
+          <span class="settings-item-label">预算管理</span>
+          <span class="settings-item-value" id="settingBudgetValue">¥1200/月</span>
+          <span class="settings-item-arrow">›</span>
+        </div>
+        <div class="settings-item" id="settingCategory">
+          <span class="settings-item-icon">📂</span>
+          <span class="settings-item-label">分类管理</span>
+          <span class="settings-item-value" id="settingCategoryValue">7 个</span>
+          <span class="settings-item-arrow">›</span>
+        </div>
+      </div>
+      <div class="settings-group">
+        <div class="settings-group-title">偏好设置</div>
+        <div class="settings-item" id="settingMood">
+          <span class="settings-item-icon">💭</span>
+          <span class="settings-item-label">消费心情标签</span>
+          <div class="toggle-switch on" id="moodToggle"></div>
+        </div>
+        <div class="settings-item" id="settingReminder">
+          <span class="settings-item-icon">🔔</span>
+          <span class="settings-item-label">预算提醒</span>
+          <div class="toggle-switch on" id="reminderToggle"></div>
+        </div>
+      </div>
+      <div class="settings-group">
+        <div class="settings-group-title">宠物</div>
+        <div class="settings-item" id="settingPet">
+          <span class="settings-item-icon">🐱</span>
+          <span class="settings-item-label">宠物设置</span>
+          <span class="settings-item-arrow">›</span>
+        </div>
+      </div>
+      <div class="settings-group">
+        <div class="settings-group-title">数据</div>
+        <div class="settings-item" id="settingData">
+          <span class="settings-item-icon">💾</span>
+          <span class="settings-item-label">数据管理</span>
+          <span class="settings-item-arrow">›</span>
+        </div>
+      </div>
+      <div class="settings-group">
+        <div class="settings-group-title">关于</div>
+        <div class="settings-item" style="cursor:default;">
+          <span class="settings-item-icon">📱</span>
+          <span class="settings-item-label">版本</span>
+          <span class="settings-item-value">v1.0.0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 分类管理覆盖层 -->
+    <div class="detail-overlay" id="categoryManageOverlay">
+      <div class="detail-header">
+        <div class="detail-back" id="categoryManageBack">‹</div>
+        <div class="detail-title">分类管理</div>
+      </div>
+      <div class="detail-body">
+        <div class="cat-manage-list" id="categoryManageList"></div>
+        <button class="cat-add-btn" id="categoryAddBtn">+ 新增分类</button>
+      </div>
+    </div>
+
+    <!-- 预算管理覆盖层 -->
+    <div class="detail-overlay" id="budgetManageOverlay">
+      <div class="detail-header">
+        <div class="detail-back" id="budgetManageBack">‹</div>
+        <div class="detail-title">预算管理</div>
+      </div>
+      <div class="detail-body">
+        <div class="budget-manage-current">
+          <div class="label">本月预算</div>
+          <div class="amount" id="budgetManageAmount">¥1200</div>
+          <div class="budget-manage-stats">
+            <div>已花 <span id="budgetManageUsed">¥0</span></div>
+            <div>剩余 <span id="budgetManageRemaining">¥1200</span></div>
+          </div>
+        </div>
+        <div class="detail-field">
+          <label class="form-label">月度预算金额（元）</label>
+          <input type="number" class="form-input" id="budgetAmountInput" placeholder="1200" min="0">
+        </div>
+        <div class="detail-field">
+          <label class="form-label">五级提醒说明</label>
+          <div style="font-size:12px;color:var(--text-light);line-height:1.8;">
+            <div>• 50%：温和提示"已用一半，继续保持"</div>
+            <div>• 80%：黄色预警，记账后弹窗提示</div>
+            <div>• 90%：橙色警告，记账时二次确认</div>
+            <div>• 100%：红色警报 + 全屏撒花庆祝</div>
+            <div>• 超支：宠物难过 + 超支分析建议</div>
+          </div>
+        </div>
+        <button class="cat-add-btn" id="budgetSaveBtn" style="margin:16px 0 0;width:100%;">保存预算</button>
+      </div>
+    </div>
+
+    <!-- 数据管理覆盖层 -->
+    <div class="detail-overlay" id="dataManageOverlay">
+      <div class="detail-header">
+        <div class="detail-back" id="dataManageBack">‹</div>
+        <div class="detail-title">数据管理</div>
+      </div>
+      <div class="detail-body">
+        <div class="data-manage-item" id="exportDataBtn">
+          <span class="data-manage-icon">📤</span>
+          <div class="data-manage-info">
+            <div class="data-manage-title">导出数据</div>
+            <div class="data-manage-desc">导出所有记账数据为 JSON 备份文件</div>
+          </div>
+        </div>
+        <div class="data-manage-item" id="importDataBtn">
+          <span class="data-manage-icon">📥</span>
+          <div class="data-manage-info">
+            <div class="data-manage-title">导入数据</div>
+            <div class="data-manage-desc">从 JSON 备份文件恢复数据（将覆盖现有数据）</div>
+          </div>
+        </div>
+        <div class="data-manage-item" id="clearDataBtn" style="color:var(--danger);">
+          <span class="data-manage-icon">🗑️</span>
+          <div class="data-manage-info">
+            <div class="data-manage-title">清空数据</div>
+            <div class="data-manage-desc">删除所有数据，恢复初始状态（不可恢复）</div>
+          </div>
+        </div>
+        <input type="file" id="importFileInput" accept=".json,application/json" style="display:none;">
+        <div class="data-manage-tip">
+          所有数据仅保存在本机，建议定期导出备份。
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <nav class="bottom-nav" id="bottomNav">
+      <div class="nav-item active" data-page="page-chat">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">记账</span>
+      </div>
+      <div class="nav-item" data-page="page-overview">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">概览</span>
+      </div>
+      <div class="nav-item" data-page="page-bills">
+        <span class="nav-icon">📝</span>
+        <span class="nav-label">账单</span>
+      </div>
+      <div class="nav-item" data-page="page-pet">
+        <span class="nav-icon">🐱</span>
+        <span class="nav-label">宠物</span>
+      </div>
+      <div class="nav-item" data-page="page-me">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">我的</span>
+      </div>
+    </nav>
+  </div>
+
+  <!-- 全局弹窗容器 -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modalBox">
+      <div class="modal-title" id="modalTitle">提示</div>
+      <div class="modal-content" id="modalContent">内容</div>
+      <div class="modal-actions" id="modalActions"></div>
+    </div>
+  </div>
+
+  <!-- 撒花容器 -->
+  <div class="confetti-container" id="confettiContainer"></div>
+
+  <!-- 核心逻辑层 -->
+  <script>
+/**
+ * 记账小猫 - 核心逻辑层
+ * 纯函数，无DOM依赖，可在Node.js中测试
+ * UMD模式：浏览器中挂到 window.App，Node中通过 module.exports 导出
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
+  } else {
+    root.App = factory();
+  }
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const App = {};
+  App.version = '1.0.0';
+  App.storageKey = 'accounting_app_data';
+
+  // ===== 工具函数 =====
+  App.Utils = {
+    /** 生成唯一ID */
+    generateId: function () {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
+    },
+
+    /** 金额格式化：去掉无意义的.00 */
+    formatMoney: function (n) {
+      n = Number(n);
+      if (isNaN(n)) return '0';
+      if (Number.isInteger(n)) return n.toString();
+      return n.toFixed(2).replace(/\.?0+$/, '');
+    },
+
+    /** 时间戳 -> YYYY-MM-DD */
+    formatDate: function (ts) {
+      const d = new Date(ts);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    },
+
+    /** 时间戳 -> HH:MM */
+    formatTime: function (ts) {
+      const d = new Date(ts);
+      return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    },
+
+    /** 时间戳 -> YYYY-MM */
+    getMonthKey: function (ts) {
+      const d = new Date(ts);
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    },
+
+    /** 获取今天日期 YYYY-MM-DD */
+    today: function () {
+      return App.Utils.formatDate(Date.now());
+    },
+
+    /** 获取本月 YYYY-MM */
+    thisMonth: function () {
+      return App.Utils.getMonthKey(Date.now());
+    },
+
+    /** HTML转义 */
+    escapeHtml: function (str) {
+      if (str == null) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  };
+
+  // ===== Storage 封装 =====
+  App.Storage = {
+    _mockData: null, // Node测试时使用内存存储
+
+    /** 读取全部数据 */
+    read: function () {
+      if (typeof localStorage === 'undefined') {
+        return App.Storage._mockData ? JSON.parse(JSON.stringify(App.Storage._mockData)) : null;
+      }
+      try {
+        const raw = localStorage.getItem(App.storageKey);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        return null;
+      }
+    },
+
+    /** 写入全部数据 */
+    write: function (data) {
+      if (typeof localStorage === 'undefined') {
+        App.Storage._mockData = JSON.parse(JSON.stringify(data));
+        return true;
+      }
+      try {
+        localStorage.setItem(App.storageKey, JSON.stringify(data));
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+
+    /** 读取某个字段 */
+    get: function (key) {
+      const data = App.Storage.read();
+      return data ? data[key] : null;
+    },
+
+    /** 更新某个字段 */
+    set: function (key, value) {
+      const data = App.Storage.read() || {};
+      data[key] = value;
+      return App.Storage.write(data);
+    },
+
+    /** 清空 */
+    clear: function () {
+      if (typeof localStorage === 'undefined') {
+        App.Storage._mockData = null;
+        return;
+      }
+      localStorage.removeItem(App.storageKey);
+    },
+
+    /** 测试用：设置内存数据 */
+    _setMock: function (data) {
+      App.Storage._mockData = data ? JSON.parse(JSON.stringify(data)) : null;
+    }
+  };
+
+  // ===== 默认数据 =====
+  App.defaultData = function () {
+    const now = Date.now();
+    return {
+      version: '1.0',
+      records: [],
+      categories: [
+        { id: 'cat_food', name: '餐饮', icon: '🍚', isDefault: true, sort: 1 },
+        { id: 'cat_study', name: '学习用品', icon: '📚', isDefault: true, sort: 2 },
+        { id: 'cat_life', name: '生活用品', icon: '🧴', isDefault: true, sort: 3 },
+        { id: 'cat_transport', name: '交通', icon: '🚌', isDefault: true, sort: 4 },
+        { id: 'cat_entertainment', name: '娱乐', icon: '🎮', isDefault: true, sort: 5 },
+        { id: 'cat_shopping', name: '购物', icon: '🛍️', isDefault: true, sort: 6 },
+        { id: 'cat_other', name: '其他', icon: '📦', isDefault: true, sort: 7 }
+      ],
+      budget: {
+        monthlyAmount: 1200,
+        reminderEnabled: true,
+        notified: { 50: false, 80: false, 90: false, 100: false },
+        notifyMonth: App.Utils.thisMonth()
+      },
+      pet: {
+        name: '小橘',
+        level: 1,
+        exp: 0,
+        totalExp: 0,
+        lastInteract: now
+      },
+      badges: [],
+      checkin: {
+        continuousDays: 0,
+        lastCheckinDate: null,
+        totalDays: 0,
+        checkinDates: []
+      },
+      challenges: [],
+      piggyBank: {
+        targetAmount: 0,
+        currentAmount: 0,
+        history: [],
+        startDate: null,
+        achieved: false,
+        achievedAt: null
+      },
+      settings: {
+        moodEnabled: true,
+        budgetReminderEnabled: true,
+        lastCategoryId: null
+      }
+    };
+  };
+
+  /** 初始化：无数据时写入默认数据 */
+  App.init = function () {
+    if (!App.Storage.read()) {
+      App.Storage.write(App.defaultData());
+    }
+    return App.Storage.read();
+  };
+
+  // ===== 记录管理 =====
+  App.Records = {
+    /** 添加记录 */
+    add: function (amount, categoryId, note, mood, timestamp, name) {
+      timestamp = timestamp || Date.now();
+      const cat = App.Categories.getById(categoryId);
+      if (!cat) return null;
+      const record = {
+        id: App.Utils.generateId(),
+        amount: Number(amount),
+        categoryId: categoryId,
+        categoryName: cat.name,
+        categoryIcon: cat.icon,
+        name: name || cat.name,
+        note: note || '',
+        mood: mood || null,
+        timestamp: timestamp,
+        date: App.Utils.formatDate(timestamp),
+        time: App.Utils.formatTime(timestamp)
+      };
+      const records = App.Storage.get('records') || [];
+      records.push(record);
+      App.Storage.set('records', records);
+      return record;
+    },
+
+    /** 获取所有记录（按时间倒序） */
+    getAll: function () {
+      const records = App.Storage.get('records') || [];
+      return records.sort((a, b) => b.timestamp - a.timestamp);
+    },
+
+    /** 获取某天的记录 */
+    getByDate: function (date) {
+      return App.Records.getAll().filter(r => r.date === date);
+    },
+
+    /** 获取某月的记录 */
+    getByMonth: function (monthKey) {
+      return App.Records.getAll().filter(r => r.date.startsWith(monthKey));
+    },
+
+    /** 获取某分类的记录 */
+    getByCategory: function (categoryId) {
+      return App.Records.getAll().filter(r => r.categoryId === categoryId);
+    },
+
+    /** 删除记录 */
+    delete: function (id) {
+      const records = App.Storage.get('records') || [];
+      const idx = records.findIndex(r => r.id === id);
+      if (idx === -1) return false;
+      records.splice(idx, 1);
+      App.Storage.set('records', records);
+      return true;
+    },
+
+    /** 更新记录 */
+    update: function (id, updates) {
+      const records = App.Storage.get('records') || [];
+      const idx = records.findIndex(r => r.id === id);
+      if (idx === -1) return null;
+      Object.assign(records[idx], updates);
+      App.Storage.set('records', records);
+      return records[idx];
+    },
+
+    /** 获取最近n条 */
+    getRecent: function (n) {
+      return App.Records.getAll().slice(0, n);
+    }
+  };
+
+  // ===== 分类管理 =====
+  App.Categories = {
+    /** 分类别名映射 */
+    aliases: {
+      'cat_food': ['吃饭', '午餐', '晚餐', '早餐', '午饭', '晚饭', '早饭', '奶茶', '咖啡', '饮料', '喝水', '零食', '水果', '外卖', '聚餐', '饭'],
+      'cat_study': ['学习', '书', '书本', '文具', '笔', '课程', '培训', '资料'],
+      'cat_life': ['生活', '日用品', '纸巾', '洗漱', '洗衣', '清洁', '家居'],
+      'cat_transport': ['交通', '打车', '公交', '地铁', '骑车', '共享单车', '加油', '停车', '车票', '机票', '高铁'],
+      'cat_entertainment': ['娱乐', '电影', '游戏', '唱歌', 'KTV', '旅游', '演出', '展览', '玩'],
+      'cat_shopping': ['购物', '衣服', '鞋', '包', '化妆品', '数码', '电器', '买'],
+      'cat_other': ['其他', '别的', '杂项']
+    },
+
+    /** 获取所有分类（按sort排序） */
+    getAll: function () {
+      const cats = App.Storage.get('categories') || [];
+      return cats.sort((a, b) => a.sort - b.sort);
+    },
+
+    /** 按ID获取 */
+    getById: function (id) {
+      const cats = App.Storage.get('categories') || [];
+      return cats.find(c => c.id === id) || null;
+    },
+
+    /** 按名称获取 */
+    getByName: function (name) {
+      const cats = App.Storage.get('categories') || [];
+      return cats.find(c => c.name === name) || null;
+    },
+
+    /** 新增分类 */
+    add: function (name, icon) {
+      if (!name || !name.trim()) return null;
+      const cats = App.Storage.get('categories') || [];
+      const cat = {
+        id: 'cat_' + App.Utils.generateId(),
+        name: name.trim(),
+        icon: icon || '📦',
+        isDefault: false,
+        sort: cats.length + 1
+      };
+      cats.push(cat);
+      App.Storage.set('categories', cats);
+      return cat;
+    },
+
+    /** 更新分类 */
+    update: function (id, name, icon) {
+      const cats = App.Storage.get('categories') || [];
+      const idx = cats.findIndex(c => c.id === id);
+      if (idx === -1) return null;
+      if (name) cats[idx].name = name.trim();
+      if (icon) cats[idx].icon = icon;
+      App.Storage.set('categories', cats);
+      return cats[idx];
+    },
+
+    /** 删除分类（有记录时归为其他） */
+    delete: function (id) {
+      const cats = App.Storage.get('categories') || [];
+      const cat = cats.find(c => c.id === id);
+      if (!cat) return { success: false, reason: '分类不存在' };
+      if (cat.isDefault) return { success: false, reason: '预设分类不可删除' };
+
+      const otherCat = cats.find(c => c.id === 'cat_other');
+      const records = App.Storage.get('records') || [];
+      let movedCount = 0;
+      records.forEach(r => {
+        if (r.categoryId === id) {
+          r.categoryId = otherCat.id;
+          r.categoryName = otherCat.name;
+          r.categoryIcon = otherCat.icon;
+          movedCount++;
+        }
+      });
+      if (movedCount > 0) App.Storage.set('records', records);
+
+      const idx = cats.findIndex(c => c.id === id);
+      cats.splice(idx, 1);
+      App.Storage.set('categories', cats);
+      return { success: true, movedCount: movedCount };
+    },
+
+    /** 从文本中匹配分类 */
+    matchCategory: function (text) {
+      const cats = App.Categories.getAll();
+      // 先匹配分类名
+      for (let i = 0; i < cats.length; i++) {
+        if (text.includes(cats[i].name)) return cats[i];
+      }
+      // 再匹配别名
+      for (let i = 0; i < cats.length; i++) {
+        const aliases = App.Categories.aliases[cats[i].id] || [];
+        for (let j = 0; j < aliases.length; j++) {
+          if (text.includes(aliases[j])) return cats[i];
+        }
+      }
+      return null;
+    }
+  };
+
+  // ===== 预算计算 =====
+  App.Budget = {
+    /** 获取预算设置 */
+    get: function () {
+      return App.Storage.get('budget') || App.defaultData().budget;
+    },
+
+    /** 设置月度预算金额 */
+    setAmount: function (amount) {
+      const budget = App.Budget.get();
+      budget.monthlyAmount = Number(amount);
+      App.Storage.set('budget', budget);
+      return budget;
+    },
+
+    /** 开关提醒 */
+    setReminder: function (enabled) {
+      const budget = App.Budget.get();
+      budget.reminderEnabled = !!enabled;
+      App.Storage.set('budget', budget);
+      return budget;
+    },
+
+    /** 获取某月预算统计 */
+    getStats: function (monthKey) {
+      monthKey = monthKey || App.Utils.thisMonth();
+      const budget = App.Budget.get();
+      const records = App.Records.getByMonth(monthKey);
+      const used = records.reduce((sum, r) => sum + r.amount, 0);
+      const remaining = budget.monthlyAmount - used;
+      const ratio = budget.monthlyAmount > 0 ? used / budget.monthlyAmount : 0;
+      let level = 'safe';
+      if (ratio >= 1) level = 'over';
+      else if (ratio >= 0.9) level = 'danger';
+      else if (ratio >= 0.8) level = 'warning';
+      else if (ratio >= 0.5) level = 'half';
+      return {
+        monthlyAmount: budget.monthlyAmount,
+        used: used,
+        remaining: remaining,
+        ratio: ratio,
+        level: level,
+        count: records.length
+      };
+    },
+
+    /** 跨月重置提醒状态 */
+    resetIfNewMonth: function () {
+      const budget = App.Budget.get();
+      const currentMonth = App.Utils.thisMonth();
+      if (budget.notifyMonth !== currentMonth) {
+        budget.notifyMonth = currentMonth;
+        budget.notified = { 50: false, 80: false, 90: false, 100: false };
+        App.Storage.set('budget', budget);
+      }
+      return budget;
+    },
+
+    /** 检查应触发的阈值（返回触发的阈值数组，考虑notified状态） */
+    checkThreshold: function () {
+      App.Budget.resetIfNewMonth();
+      const budget = App.Budget.get();
+      if (!budget.reminderEnabled) return [];
+      const stats = App.Budget.getStats();
+      const triggered = [];
+      const thresholds = [
+        { key: 50, ratio: 0.5, type: 'info' },
+        { key: 80, ratio: 0.8, type: 'warning' },
+        { key: 90, ratio: 0.9, type: 'danger' },
+        { key: 100, ratio: 1.0, type: 'celebrate' }
+      ];
+      thresholds.forEach(t => {
+        if (stats.ratio >= t.ratio && !budget.notified[t.key]) {
+          triggered.push(t);
+          budget.notified[t.key] = true;
+        }
+      });
+      if (triggered.length > 0) App.Storage.set('budget', budget);
+      // 超支（每次都触发）
+      if (stats.ratio > 1) triggered.push({ key: 'over', ratio: 1.0, type: 'over' });
+      // 90%以上每次都二次确认
+      if (stats.ratio >= 0.9 && stats.ratio < 1) {
+        const already = triggered.find(t => t.key === 90);
+        if (!already) triggered.push({ key: 90, ratio: 0.9, type: 'danger', repeat: true });
+      }
+      return triggered;
+    }
+  };
+
+  // ===== 统计计算 =====
+  App.Stats = {
+    /** 今日总开销 */
+    getTodayTotal: function () {
+      const records = App.Records.getByDate(App.Utils.today());
+      return {
+        total: records.reduce((sum, r) => sum + r.amount, 0),
+        count: records.length
+      };
+    },
+
+    /** 某月总开销 */
+    getMonthTotal: function (monthKey) {
+      monthKey = monthKey || App.Utils.thisMonth();
+      const records = App.Records.getByMonth(monthKey);
+      return {
+        total: records.reduce((sum, r) => sum + r.amount, 0),
+        count: records.length,
+        avg: records.length > 0 ? records.reduce((sum, r) => sum + r.amount, 0) / records.length : 0
+      };
+    },
+
+    /** 某月各分类统计 */
+    getCategoryStats: function (monthKey) {
+      monthKey = monthKey || App.Utils.thisMonth();
+      const records = App.Records.getByMonth(monthKey);
+      const map = {};
+      records.forEach(r => {
+        if (!map[r.categoryId]) {
+          map[r.categoryId] = { categoryId: r.categoryId, name: r.categoryName, icon: r.categoryIcon, total: 0, count: 0 };
+        }
+        map[r.categoryId].total += r.amount;
+        map[r.categoryId].count++;
+      });
+      const list = Object.values(map).sort((a, b) => b.total - a.total);
+      const grandTotal = list.reduce((s, c) => s + c.total, 0);
+      list.forEach(c => { c.percent = grandTotal > 0 ? (c.total / grandTotal * 100) : 0; });
+      return list;
+    },
+
+    /** 近7天走势 */
+    get7DayTrend: function () {
+      const result = [];
+      const now = new Date();
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const dateStr = App.Utils.formatDate(d.getTime());
+        const records = App.Records.getByDate(dateStr);
+        result.push({
+          date: dateStr,
+          label: (d.getMonth() + 1) + '/' + d.getDate(),
+          total: records.reduce((s, r) => s + r.amount, 0),
+          count: records.length
+        });
+      }
+      return result;
+    },
+
+    /** 近n个月趋势 */
+    getMonthTrend: function (n) {
+      n = n || 6;
+      const result = [];
+      const now = new Date();
+      for (let i = n - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthKey = App.Utils.getMonthKey(d.getTime());
+        const stats = App.Stats.getMonthTotal(monthKey);
+        result.push({
+          month: monthKey,
+          label: (d.getMonth() + 1) + '月',
+          total: stats.total,
+          count: stats.count
+        });
+      }
+      return result;
+    },
+
+    /** 某月心情统计 */
+    getMoodStats: function (monthKey) {
+      monthKey = monthKey || App.Utils.thisMonth();
+      const records = App.Records.getByMonth(monthKey);
+      const moods = { happy: 0, normal: 0, sad: 0, impulse: 0 };
+      const moodAmount = { happy: 0, normal: 0, sad: 0, impulse: 0 };
+      records.forEach(r => {
+        if (r.mood && moods[r.mood] !== undefined) {
+          moods[r.mood]++;
+          moodAmount[r.mood] += r.amount;
+        }
+      });
+      return {
+        counts: moods,
+        amounts: moodAmount,
+        impulseTotal: moodAmount.impulse,
+        impulseCount: moods.impulse
+      };
+    },
+
+    /** 按日期分组记录（用于账单列表） */
+    groupByDate: function (records) {
+      const map = {};
+      records.forEach(r => {
+        if (!map[r.date]) map[r.date] = [];
+        map[r.date].push(r);
+      });
+      return Object.keys(map).sort((a, b) => b.localeCompare(a)).map(date => ({
+        date: date,
+        records: map[date].sort((a, b) => b.timestamp - a.timestamp),
+        total: map[date].reduce((s, r) => s + r.amount, 0)
+      }));
+    }
+  };
+
+  // ===== 自然语言解析器 =====
+  App.Parser = {
+    /**
+     * 解析输入文本
+     * @param {string} text - 用户输入
+     * @returns {object|null} - {categoryId, categoryName, categoryIcon, amount} 或 null
+     */
+    parse: function (text) {
+      if (!text || !text.trim()) return null;
+      const input = text.trim();
+
+      // 提取金额：匹配数字（支持小数和负数），可选前面有¥/$，后面可选"元/块/钱"
+      const amountMatch = input.match(/(?:¥|\$)?\s*(-?\d+(?:\.\d+)?)\s*(?:元|块|钱)?/);
+      if (!amountMatch) return null;
+      const amount = parseFloat(amountMatch[1]);
+      if (isNaN(amount) || amount <= 0) return null;
+
+      // 匹配分类
+      const category = App.Categories.matchCategory(input);
+      if (!category) return null;
+
+      return {
+        categoryId: category.id,
+        categoryName: category.name,
+        categoryIcon: category.icon,
+        amount: amount
+      };
+    }
+  };
+
+  // ===== 宠物养成 =====
+  App.Pet = {
+    /** 等级配置 */
+    LEVELS: [
+      { level: 1, icon: '🥚', name: '猫蛋', expNeeded: 50 },
+      { level: 2, icon: '🐱', name: '小奶猫', expNeeded: 150 },
+      { level: 3, icon: '😺', name: '幼猫', expNeeded: 300 },
+      { level: 4, icon: '😻', name: '成年猫', expNeeded: 600 },
+      { level: 5, icon: '👑', name: '猫王', expNeeded: Infinity }
+    ],
+
+    /** 心情配置 */
+    MOODS: [
+      { maxRatio: 0.5, icon: '😺', name: '开心', desc: '状态很好，继续保持' },
+      { maxRatio: 0.8, icon: '😐', name: '一般', desc: '还算正常，注意控制' },
+      { maxRatio: 0.9, icon: '😰', name: '紧张', desc: '有点紧张了，少花点' },
+      { maxRatio: 1.0, icon: '😱', name: '焦虑', desc: '快超支了，住手！' },
+      { maxRatio: Infinity, icon: '😿', name: '难过', desc: '超支了，下个月加油' }
+    ],
+
+    /** 获取宠物数据 */
+    get: function () {
+      return App.Storage.get('pet') || { name: '小橘', level: 1, exp: 0, totalExp: 0, lastInteract: Date.now() };
+    },
+
+    /** 获取等级信息 */
+    getLevelInfo: function (level) {
+      return App.Pet.LEVELS[level - 1] || App.Pet.LEVELS[0];
+    },
+
+    /** 获取经验进度 {current, needed, percent} */
+    getExpProgress: function () {
+      const pet = App.Pet.get();
+      const info = App.Pet.getLevelInfo(pet.level);
+      const needed = info.expNeeded === Infinity ? 0 : info.expNeeded;
+      const percent = needed > 0 ? Math.min(Math.round(pet.exp / needed * 100), 100) : 100;
+      return { current: pet.exp, needed: needed, percent: percent, isMax: pet.level >= 5 };
+    },
+
+    /** 计算记账获得的经验 */
+    calcExpGain: function (amount) {
+      return 10 + Math.floor(Number(amount) / 10);
+    },
+
+    /**
+     * 增加经验
+     * @returns {object} {leveledUp, oldLevel, newLevel, gainedExp, newIcon, newName}
+     */
+    addExp: function (amount) {
+      const pet = App.Pet.get();
+      const oldLevel = pet.level;
+      const gainedExp = App.Pet.calcExpGain(amount);
+      pet.exp += gainedExp;
+      pet.totalExp += gainedExp;
+
+      let leveledUp = false;
+      // 循环检测升级（可能连续升级）
+      while (pet.level < 5) {
+        const info = App.Pet.getLevelInfo(pet.level);
+        if (info.expNeeded === Infinity) break;
+        if (pet.exp >= info.expNeeded) {
+          pet.exp -= info.expNeeded;
+          pet.level++;
+          leveledUp = true;
+        } else {
+          break;
+        }
+      }
+      // 满级后经验不再增加
+      if (pet.level >= 5) {
+        pet.exp = 0;
+      }
+
+      App.Storage.set('pet', pet);
+      const newInfo = App.Pet.getLevelInfo(pet.level);
+      return {
+        leveledUp: leveledUp,
+        oldLevel: oldLevel,
+        newLevel: pet.level,
+        gainedExp: gainedExp,
+        newIcon: newInfo.icon,
+        newName: newInfo.name
+      };
+    },
+
+    /** 获取当前心情（与预算联动） */
+    getMood: function () {
+      const stats = App.Budget.getStats();
+      for (let i = 0; i < App.Pet.MOODS.length; i++) {
+        if (stats.ratio < App.Pet.MOODS[i].maxRatio) {
+          return App.Pet.MOODS[i];
+        }
+      }
+      return App.Pet.MOODS[App.Pet.MOODS.length - 1];
+    },
+
+    /** 改名 */
+    setName: function (name) {
+      if (!name || !name.trim()) return false;
+      const pet = App.Pet.get();
+      pet.name = name.trim();
+      App.Storage.set('pet', pet);
+      return true;
+    },
+
+    /** 重置宠物 */
+    reset: function () {
+      const pet = App.Pet.get();
+      pet.level = 1;
+      pet.exp = 0;
+      pet.totalExp = 0;
+      App.Storage.set('pet', pet);
+      return pet;
+    },
+
+    /** 互动（返回随机台词） */
+    interact: function () {
+      const pet = App.Pet.get();
+      pet.lastInteract = Date.now();
+      App.Storage.set('pet', pet);
+      const lines = [
+        '今天也要好好记账哦～',
+        '摸摸头～',
+        '喵？有什么事吗？',
+        '我在等你记账呢！',
+        '今天花了多少钱呀？',
+        '有你在真好～',
+        '小橘会一直陪着你的！',
+        '记账使我快乐，也使你快乐～',
+        '喵呜～',
+        '记得控制预算哦！'
+      ];
+      return lines[Math.floor(Math.random() * lines.length)];
+    }
+  };
+
+  // ===== 成就徽章 =====
+  App.Badges = {
+    /** 徽章定义（20个） */
+    DEFINITIONS: [
+      // 记账坚持类
+      { id: 'first_record', name: '第一笔账', desc: '记录第一笔开销', icon: '📝', category: 'persistence' },
+      { id: 'ten_records', name: '记账小能手', desc: '累计记录 10 笔', icon: '✍️', category: 'persistence' },
+      { id: 'hundred_records', name: '百笔达人', desc: '累计记录 100 笔', icon: '💯', category: 'persistence' },
+      { id: 'five_hundred_records', name: '五百笔神', desc: '累计记录 500 笔', icon: '🏆', category: 'persistence' },
+      { id: 'thousand_records', name: '千笔传奇', desc: '累计记录 1000 笔', icon: '👑', category: 'persistence' },
+      { id: 'streak_7', name: '坚持一周', desc: '连续记账 7 天', icon: '🔥', category: 'persistence' },
+      { id: 'streak_30', name: '坚持一月', desc: '连续记账 30 天', icon: '💎', category: 'persistence' },
+      { id: 'streak_100', name: '坚持百日', desc: '连续记账 100 天', icon: '✨', category: 'persistence' },
+      // 预算管理类
+      { id: 'month_safe', name: '月度达标', desc: '本月开销不超预算', icon: '✅', category: 'budget' },
+      { id: 'three_month_safe', name: '季度达标', desc: '连续 3 个月不超支', icon: '🎯', category: 'budget' },
+      { id: 'zero_overspend', name: '零超支月', desc: '本月零超支', icon: '🛡️', category: 'budget' },
+      { id: 'perfect_budget', name: '精准达标', desc: '某月预算刚好用完 100%', icon: '🎯', category: 'budget' },
+      // 分类达人类
+      { id: 'all_categories', name: '分类达人', desc: '使用全部 7 个预设分类', icon: '📂', category: 'category' },
+      { id: 'category_master', name: '专精一类', desc: '单个分类累计 50 笔', icon: '🎓', category: 'category' },
+      // 趣味彩蛋类
+      { id: 'night_owl', name: '夜猫子', desc: '在 23:00 后记过账', icon: '🦉', category: 'fun' },
+      { id: 'early_bird', name: '早起的鸟儿', desc: '在 05:00 前记过账', icon: '🐦', category: 'fun' },
+      { id: 'pet_max', name: '宠物满级', desc: '宠物升到满级 Lv.5', icon: '👑', category: 'fun' },
+      { id: 'impulse_3', name: '冲动消费者', desc: '冲动消费累计 3 笔', icon: '😤', category: 'fun' },
+      { id: 'big_spender', name: '大手笔', desc: '单笔消费 ≥ 500 元', icon: '💎', category: 'fun' },
+      { id: 'five_a_day', name: '记账狂魔', desc: '单日记账 ≥ 5 笔', icon: '⚡', category: 'fun' }
+    ],
+
+    /** 获取所有徽章（含解锁状态） */
+    getAll: function () {
+      const stored = App.Storage.get('badges') || [];
+      const unlockedMap = {};
+      stored.forEach(b => { unlockedMap[b.id] = b; });
+      return App.Badges.DEFINITIONS.map(def => {
+        const s = unlockedMap[def.id];
+        return {
+          id: def.id,
+          name: def.name,
+          desc: def.desc,
+          icon: def.icon,
+          category: def.category,
+          unlocked: s ? !!s.unlocked : false,
+          unlockedAt: s ? s.unlockedAt : null
+        };
+      });
+    },
+
+    /** 获取已解锁数量 */
+    getUnlockedCount: function () {
+      return App.Badges.getAll().filter(b => b.unlocked).length;
+    },
+
+    /** 检查单个徽章条件 */
+    _checkCondition: function (badgeId) {
+      const records = App.Storage.get('records') || [];
+      const checkin = App.Storage.get('checkin') || { continuousDays: 0 };
+      const budget = App.Storage.get('budget') || { monthlyAmount: 1200 };
+      const pet = App.Storage.get('pet') || { level: 1 };
+
+      switch (badgeId) {
+        case 'first_record': return records.length >= 1;
+        case 'ten_records': return records.length >= 10;
+        case 'hundred_records': return records.length >= 100;
+        case 'five_hundred_records': return records.length >= 500;
+        case 'thousand_records': return records.length >= 1000;
+        case 'streak_7': return checkin.continuousDays >= 7;
+        case 'streak_30': return checkin.continuousDays >= 30;
+        case 'streak_100': return checkin.continuousDays >= 100;
+        case 'month_safe':
+        case 'zero_overspend': {
+          const stats = App.Budget.getStats();
+          return stats.ratio <= 1;
+        }
+        case 'three_month_safe': {
+          // 检查最近3个月是否都不超支
+          const now = new Date();
+          for (let i = 0; i < 3; i++) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const monthKey = App.Utils.getMonthKey(d.getTime());
+            const monthRecords = records.filter(r => r.date.startsWith(monthKey));
+            const total = monthRecords.reduce((s, r) => s + r.amount, 0);
+            if (total > budget.monthlyAmount) return false;
+          }
+          return true;
+        }
+        case 'perfect_budget': {
+          // 检查是否有月份达到100%（通过notified记录或精确计算）
+          const monthMap = {};
+          records.forEach(r => {
+            const m = r.date.substring(0, 7);
+            monthMap[m] = (monthMap[m] || 0) + r.amount;
+          });
+          return Object.values(monthMap).some(total => Math.abs(total - budget.monthlyAmount) < 0.01);
+        }
+        case 'all_categories': {
+          const defaultCatIds = ['cat_food', 'cat_study', 'cat_life', 'cat_transport', 'cat_entertainment', 'cat_shopping', 'cat_other'];
+          const usedIds = new Set(records.map(r => r.categoryId));
+          return defaultCatIds.every(id => usedIds.has(id));
+        }
+        case 'category_master': {
+          const countMap = {};
+          records.forEach(r => { countMap[r.categoryId] = (countMap[r.categoryId] || 0) + 1; });
+          return Object.values(countMap).some(c => c >= 50);
+        }
+        case 'night_owl': return records.some(r => { const h = parseInt(r.time.split(':')[0]); return h >= 23; });
+        case 'early_bird': return records.some(r => { const h = parseInt(r.time.split(':')[0]); return h < 5; });
+        case 'pet_max': return pet.level >= 5;
+        case 'impulse_3': return records.filter(r => r.mood === 'impulse').length >= 3;
+        case 'big_spender': return records.some(r => r.amount >= 500);
+        case 'five_a_day': {
+          const dayMap = {};
+          records.forEach(r => { dayMap[r.date] = (dayMap[r.date] || 0) + 1; });
+          return Object.values(dayMap).some(c => c >= 5);
+        }
+        default: return false;
+      }
+    },
+
+    /**
+     * 检查所有未解锁徽章，返回新解锁的徽章列表
+     * @returns {array} 新解锁的徽章列表
+     */
+    checkAll: function () {
+      const allBadges = App.Badges.getAll();
+      const stored = App.Storage.get('badges') || [];
+      const storedMap = {};
+      stored.forEach(b => { storedMap[b.id] = b; });
+
+      const newlyUnlocked = [];
+      allBadges.forEach(badge => {
+        if (!badge.unlocked && App.Badges._checkCondition(badge.id)) {
+          const record = { id: badge.id, unlocked: true, unlockedAt: Date.now() };
+          if (storedMap[badge.id]) {
+            storedMap[badge.id] = record;
+          } else {
+            stored.push(record);
+          }
+          newlyUnlocked.push({ ...badge, unlocked: true, unlockedAt: record.unlockedAt });
+        }
+      });
+
+      if (newlyUnlocked.length > 0) {
+        App.Storage.set('badges', stored);
+      }
+      return newlyUnlocked;
+    }
+  };
+
+  // ===== 连续打卡 =====
+  App.Checkin = {
+    /** 获取打卡数据 */
+    get: function () {
+      return App.Storage.get('checkin') || { continuousDays: 0, lastCheckinDate: null, totalDays: 0, checkinDates: [] };
+    },
+
+    /**
+     * 每日第一笔记账时调用
+     * @returns {object} {checkedIn, continuousDays, isNewDay}
+     */
+    check: function () {
+      const checkin = App.Checkin.get();
+      const today = App.Utils.today();
+      const currentMonth = App.Utils.thisMonth();
+
+      // 今天已打卡
+      if (checkin.lastCheckinDate === today) {
+        return { checkedIn: false, continuousDays: checkin.continuousDays, isNewDay: false };
+      }
+
+      // 计算昨天
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = App.Utils.formatDate(yesterday.getTime());
+
+      if (checkin.lastCheckinDate === yesterdayStr) {
+        checkin.continuousDays++;
+      } else {
+        checkin.continuousDays = 1;
+      }
+      checkin.totalDays++;
+      checkin.lastCheckinDate = today;
+
+      // 跨月重置日历
+      if (!checkin.checkinDates || checkin.checkinDates.length === 0 ||
+          !checkin.checkinDates[0].startsWith(currentMonth)) {
+        checkin.checkinDates = [today];
+      } else {
+        if (!checkin.checkinDates.includes(today)) {
+          checkin.checkinDates.push(today);
+        }
+      }
+
+      App.Storage.set('checkin', checkin);
+      return { checkedIn: true, continuousDays: checkin.continuousDays, isNewDay: true };
+    },
+
+    /** 获取连续打卡信息（火焰颜色、称号） */
+    getStreakInfo: function () {
+      const checkin = App.Checkin.get();
+      const days = checkin.continuousDays;
+      if (days >= 100) return { days: days, icon: '✨', color: 'gold', title: '记账之神' };
+      if (days >= 30) return { days: days, icon: '👑', color: 'purple', title: '记账达人' };
+      if (days >= 7) return { days: days, icon: '💎', color: 'blue', title: '记账新手' };
+      return { days: days, icon: '🔥', color: 'normal', title: '继续加油' };
+    },
+
+    /** 获取本月打卡日历（已打卡日期数组） */
+    getMonthCalendar: function () {
+      const checkin = App.Checkin.get();
+      const currentMonth = App.Utils.thisMonth();
+      if (!checkin.checkinDates) return [];
+      return checkin.checkinDates.filter(d => d.startsWith(currentMonth));
+    }
+  };
+
+  // ===== 省钱挑战 =====
+  App.Challenges = {
+    /** 预设挑战定义 */
+    DEFINITIONS: [
+      {
+        id: 'no_milk_tea',
+        name: '30天不喝奶茶',
+        desc: '连续30天不喝奶茶，养成健康习惯',
+        icon: '🧋',
+        duration: 30,
+        type: 'no_keyword',
+        keyword: '奶茶',
+        categoryId: 'cat_food'
+      },
+      {
+        id: 'low_carbon',
+        name: '一周低碳出行',
+        desc: '连续7天不使用交通工具，步行或骑行',
+        icon: '🚲',
+        duration: 7,
+        type: 'no_category',
+        categoryId: 'cat_transport'
+      },
+      {
+        id: 'no_shopping',
+        name: '7天不购物',
+        desc: '连续7天不购物，控制消费欲望',
+        icon: '🛍️',
+        duration: 7,
+        type: 'no_category',
+        categoryId: 'cat_shopping'
+      },
+      {
+        id: 'food_budget',
+        name: '30天餐饮≤600',
+        desc: '30天内餐饮总开销不超过600元',
+        icon: '🍱',
+        duration: 30,
+        type: 'category_budget',
+        categoryId: 'cat_food',
+        maxAmount: 600
+      }
+    ],
+
+    /** 获取所有挑战（含状态） */
+    getAll: function () {
+      const stored = App.Storage.get('challenges') || [];
+      const storedMap = {};
+      stored.forEach(c => { storedMap[c.id] = c; });
+      return App.Challenges.DEFINITIONS.map(def => {
+        const s = storedMap[def.id];
+        return {
+          id: def.id,
+          name: def.name,
+          desc: def.desc,
+          icon: def.icon,
+          duration: def.duration,
+          type: def.type,
+          categoryId: def.categoryId,
+          keyword: def.keyword,
+          maxAmount: def.maxAmount,
+          status: s ? s.status : 'not_joined',
+          startDate: s ? s.startDate : null,
+          endDate: s ? s.endDate : null
+        };
+      });
+    },
+
+    /** 加入挑战 */
+    join: function (id) {
+      const def = App.Challenges.DEFINITIONS.find(d => d.id === id);
+      if (!def) return null;
+      const stored = App.Storage.get('challenges') || [];
+      const existing = stored.find(c => c.id === id);
+      if (existing && existing.status === 'active') return existing;
+      const challenge = {
+        id: id,
+        status: 'active',
+        startDate: App.Utils.today(),
+        endDate: null
+      };
+      if (existing) {
+        existing.status = 'active';
+        existing.startDate = challenge.startDate;
+        existing.endDate = null;
+      } else {
+        stored.push(challenge);
+      }
+      App.Storage.set('challenges', stored);
+      return challenge;
+    },
+
+    /** 获取挑战进度 */
+    getProgress: function (id) {
+      const all = App.Challenges.getAll();
+      const challenge = all.find(c => c.id === id);
+      if (!challenge || !challenge.startDate) return { daysPassed: 0, percent: 0, detail: '' };
+      const records = App.Storage.get('records') || [];
+      const start = new Date(challenge.startDate);
+      const today = new Date();
+      const daysPassed = Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1;
+      const percent = Math.min(Math.round(daysPassed / challenge.duration * 100), 100);
+
+      let detail = '';
+      if (challenge.type === 'no_keyword') {
+        const violated = records.filter(r =>
+          r.date >= challenge.startDate &&
+          r.name && r.name.includes(challenge.keyword)
+        ).length;
+        detail = violated > 0 ? '已违反 ' + violated + ' 次' : '坚持中，未喝奶茶';
+      } else if (challenge.type === 'no_category') {
+        const count = records.filter(r =>
+          r.date >= challenge.startDate && r.categoryId === challenge.categoryId
+        ).length;
+        detail = count > 0 ? '已违反 ' + count + ' 次' : '坚持中，0次相关消费';
+      } else if (challenge.type === 'category_budget') {
+        const total = records.filter(r =>
+          r.date >= challenge.startDate && r.categoryId === challenge.categoryId
+        ).reduce((s, r) => s + r.amount, 0);
+        detail = '已花 ' + total.toFixed(1) + ' / ' + challenge.maxAmount + ' 元';
+      }
+
+      return { daysPassed: daysPassed, percent: percent, detail: detail };
+    },
+
+    /**
+     * 检查所有进行中挑战的状态
+     * @returns {array} 状态变化的挑战列表
+     */
+    checkAll: function () {
+      const all = App.Challenges.getAll();
+      const stored = App.Storage.get('challenges') || [];
+      const storedMap = {};
+      stored.forEach(c => { storedMap[c.id] = c; });
+      const records = App.Storage.get('records') || [];
+      const changed = [];
+
+      all.forEach(challenge => {
+        if (challenge.status !== 'active' || !challenge.startDate) return;
+        const start = new Date(challenge.startDate);
+        const today = new Date();
+        const daysPassed = Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1;
+        const periodRecords = records.filter(r => r.date >= challenge.startDate);
+
+        let newStatus = null;
+        let violated = false;
+
+        if (challenge.type === 'no_keyword') {
+          violated = periodRecords.some(r => r.name && r.name.includes(challenge.keyword));
+        } else if (challenge.type === 'no_category') {
+          violated = periodRecords.some(r => r.categoryId === challenge.categoryId);
+        } else if (challenge.type === 'category_budget') {
+          const total = periodRecords.filter(r => r.categoryId === challenge.categoryId)
+            .reduce((s, r) => s + r.amount, 0);
+          violated = total > challenge.maxAmount;
+        }
+
+        if (violated) {
+          newStatus = 'failed';
+        } else if (daysPassed >= challenge.duration) {
+          newStatus = 'completed';
+        }
+
+        if (newStatus) {
+          const s = storedMap[challenge.id];
+          if (s) {
+            s.status = newStatus;
+            s.endDate = App.Utils.today();
+          }
+          changed.push({ ...challenge, status: newStatus, endDate: App.Utils.today() });
+        }
+      });
+
+      if (changed.length > 0) {
+        App.Storage.set('challenges', stored);
+      }
+      return changed;
+    }
+  };
+
+  // ===== 存钱罐 =====
+  App.PiggyBank = {
+    /** 获取存钱罐数据 */
+    get: function () {
+      return App.Storage.get('piggyBank') || { targetAmount: 0, currentAmount: 0, history: [] };
+    },
+
+    /** 设置目标金额 */
+    setTarget: function (amount) {
+      amount = Number(amount);
+      if (!amount || amount <= 0) return false;
+      const piggy = App.PiggyBank.get();
+      piggy.targetAmount = amount;
+      App.Storage.set('piggyBank', piggy);
+      return true;
+    },
+
+    /** 存入 */
+    deposit: function (amount, note) {
+      amount = Number(amount);
+      if (!amount || amount <= 0) return false;
+      const piggy = App.PiggyBank.get();
+      piggy.currentAmount += amount;
+      piggy.history.push({
+        id: App.Utils.generateId(),
+        amount: amount,
+        type: 'deposit',
+        note: note || '',
+        date: App.Utils.today(),
+        timestamp: Date.now()
+      });
+      App.Storage.set('piggyBank', piggy);
+      return piggy;
+    },
+
+    /** 取出 */
+    withdraw: function (amount, note) {
+      amount = Number(amount);
+      if (!amount || amount <= 0) return false;
+      const piggy = App.PiggyBank.get();
+      if (amount > piggy.currentAmount) return false;
+      piggy.currentAmount -= amount;
+      piggy.history.push({
+        id: App.Utils.generateId(),
+        amount: amount,
+        type: 'withdraw',
+        note: note || '',
+        date: App.Utils.today(),
+        timestamp: Date.now()
+      });
+      App.Storage.set('piggyBank', piggy);
+      return piggy;
+    },
+
+    /** 获取进度 */
+    getProgress: function () {
+      const piggy = App.PiggyBank.get();
+      const percent = piggy.targetAmount > 0
+        ? Math.min(Math.round(piggy.currentAmount / piggy.targetAmount * 100), 100)
+        : 0;
+      return { current: piggy.currentAmount, target: piggy.targetAmount, percent: percent };
+    },
+
+    /** 重置 */
+    reset: function () {
+      App.Storage.set('piggyBank', { targetAmount: 0, currentAmount: 0, history: [] });
+      return true;
+    }
+  };
+
+  return App;
+});
+
+</script>
+  <!-- UI 层（后续阶段填充） -->
+  <script>
+    // === 路由与导航 ===
+    (function() {
+      const navItems = document.querySelectorAll('.nav-item');
+      const pages = document.querySelectorAll('.page');
+
+      function switchPage(pageId) {
+        pages.forEach(p => p.classList.remove('active'));
+        navItems.forEach(n => n.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        document.querySelector(`.nav-item[data-page="${pageId}"]`).classList.add('active');
+        // 触发页面渲染事件
+        window.dispatchEvent(new CustomEvent('page:show', { detail: { pageId } }));
+      }
+
+      navItems.forEach(item => {
+        item.addEventListener('click', () => {
+          switchPage(item.dataset.page);
+        });
+      });
+
+      // 暴露全局切换函数
+      window.AppUI = window.AppUI || {};
+      window.AppUI.switchPage = switchPage;
+    })();
+
+    // === 全局弹窗工具 ===
+    (function() {
+      const overlay = document.getElementById('modalOverlay');
+      const titleEl = document.getElementById('modalTitle');
+      const contentEl = document.getElementById('modalContent');
+      const actionsEl = document.getElementById('modalActions');
+
+      function showModal(options) {
+        titleEl.textContent = options.title || '提示';
+        contentEl.innerHTML = options.content || '';
+        actionsEl.innerHTML = '';
+        (options.buttons || [{ text: '确定', type: 'primary' }]).forEach(btn => {
+          const b = document.createElement('button');
+          b.className = 'btn ' + (btn.type === 'danger' ? 'btn-danger' : 'btn-primary');
+          b.textContent = btn.text;
+          b.onclick = () => {
+            if (btn.onClick) btn.onClick();
+            if (btn.close !== false) hideModal();
+          };
+          actionsEl.appendChild(b);
+        });
+        overlay.classList.add('show');
+      }
+
+      function hideModal() {
+        overlay.classList.remove('show');
+      }
+
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) hideModal();
+      });
+
+      window.AppUI = window.AppUI || {};
+      window.AppUI.showModal = showModal;
+      window.AppUI.hideModal = hideModal;
+    })();
+
+    // === 撒花动画 ===
+    (function() {
+      const container = document.getElementById('confettiContainer');
+      const colors = ['#FF8C42', '#FFD166', '#7BC8A4', '#6BB6E8', '#FF6B6B', '#FFA968'];
+
+      function launchConfetti(count) {
+        count = count || 60;
+        container.innerHTML = '';
+        for (let i = 0; i < count; i++) {
+          const piece = document.createElement('div');
+          piece.className = 'confetti-piece';
+          piece.style.left = Math.random() * 100 + '%';
+          piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+          piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+          piece.style.animationDelay = (Math.random() * 0.5) + 's';
+          piece.style.width = (6 + Math.random() * 8) + 'px';
+          piece.style.height = (6 + Math.random() * 8) + 'px';
+          piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+          container.appendChild(piece);
+        }
+        setTimeout(() => { container.innerHTML = ''; }, 4500);
+      }
+
+      window.AppUI = window.AppUI || {};
+      window.AppUI.launchConfetti = launchConfetti;
+    })();
+
+    // === 聊天首页 UI ===
+    (function () {
+      const messagesEl = document.getElementById('chatMessages');
+      const inputEl = document.getElementById('chatInput');
+      const sendBtn = document.getElementById('chatSendBtn');
+      const quickCatsEl = document.getElementById('chatQuickCats');
+      const petAvatarEl = document.getElementById('chatPetAvatar');
+      const petNameEl = document.getElementById('chatPetName');
+      const petMoodEl = document.getElementById('chatPetMood');
+      const todayTotalEl = document.getElementById('chatTodayTotal');
+      const petInfoEl = document.getElementById('chatPetInfo');
+
+      // 内存消息列表（不持久化，每次打开重新开始）
+      let chatMessages = [];
+
+      /** 渲染所有消息 */
+      function renderMessages() {
+        messagesEl.innerHTML = '';
+        chatMessages.forEach(msg => {
+          const wrap = document.createElement('div');
+          wrap.className = 'chat-msg chat-msg-' + msg.type;
+          if (msg.type === 'left') {
+            const avatar = document.createElement('div');
+            avatar.className = 'chat-msg-avatar';
+            avatar.textContent = msg.avatar || '🐱';
+            wrap.appendChild(avatar);
+          }
+          const bubble = document.createElement('div');
+          bubble.className = 'chat-bubble chat-bubble-' + msg.type;
+          bubble.textContent = msg.text;
+          wrap.appendChild(bubble);
+          messagesEl.appendChild(wrap);
+        });
+        scrollToBottom();
+      }
+
+      /** 添加一条消息 */
+      function addMessage(type, text, avatar) {
+        chatMessages.push({ type, text, avatar: avatar || '🐱', time: Date.now() });
+        renderMessages();
+      }
+
+      /** 滚动到底部 */
+      function scrollToBottom() {
+        setTimeout(() => {
+          messagesEl.scrollTop = messagesEl.scrollHeight;
+        }, 10);
+      }
+
+      /** 渲染快捷分类标签 */
+      function renderQuickCats() {
+        const cats = App.Categories.getAll();
+        const lastCatId = App.Storage.get('settings')?.lastCategoryId;
+        quickCatsEl.innerHTML = '';
+        cats.forEach(cat => {
+          const tag = document.createElement('div');
+          tag.className = 'quick-cat-tag' + (cat.id === lastCatId ? ' active' : '');
+          tag.textContent = cat.icon + ' ' + cat.name;
+          tag.dataset.categoryId = cat.id;
+          tag.addEventListener('click', () => {
+            inputEl.value = cat.name + ' ';
+            inputEl.focus();
+            // 高亮所有标签中的当前点击
+            document.querySelectorAll('.quick-cat-tag').forEach(t => t.classList.remove('active'));
+            tag.classList.add('active');
+          });
+          quickCatsEl.appendChild(tag);
+        });
+      }
+
+      /** 更新头部（宠物信息 + 今日总开销） */
+      function updateHeader() {
+        const pet = App.Storage.get('pet') || { name: '小橘', level: 1 };
+        const levels = ['🥚', '🐱', '😺', '😻', '👑'];
+        petAvatarEl.textContent = levels[pet.level - 1] || '🥚';
+        petNameEl.textContent = pet.name;
+        // 心情（阶段5完善，这里先显示默认）
+        const budgetStats = App.Budget.getStats();
+        let moodText = '😺 状态很好';
+        if (budgetStats.ratio >= 1) moodText = '😿 超支了';
+        else if (budgetStats.ratio >= 0.9) moodText = '😱 快超支了';
+        else if (budgetStats.ratio >= 0.8) moodText = '😰 有点紧张';
+        else if (budgetStats.ratio >= 0.5) moodText = '😐 还算正常';
+        petMoodEl.textContent = moodText;
+        // 今日总开销
+        const today = App.Stats.getTodayTotal();
+        todayTotalEl.textContent = '今日 ¥' + App.Utils.formatMoney(today.total);
+      }
+
+      /** 处理发送 */
+      function handleSend() {
+        const text = inputEl.value.trim();
+        if (!text) return;
+        addMessage('right', text);
+        inputEl.value = '';
+
+        const parsed = App.Parser.parse(text);
+        if (!parsed) {
+          addMessage('left', '没看懂哦，试试这样输入：吃饭 25 元 / 奶茶 15');
+          return;
+        }
+
+        /** 执行保存 */
+        function doSave() {
+          const record = App.Records.add(parsed.amount, parsed.categoryId, '', null, null, parsed.name);
+          if (!record) {
+            addMessage('left', '保存失败，请重试');
+            return;
+          }
+          const settings = App.Storage.get('settings') || {};
+          settings.lastCategoryId = parsed.categoryId;
+          App.Storage.set('settings', settings);
+
+          addMessage('left', '已记录：' + parsed.categoryName + ' ' + App.Utils.formatMoney(parsed.amount) + ' 元，时间 ' + record.time + ' 🐱');
+
+          checkBudgetAfterRecord();
+
+          // 宠物获得经验
+          const petResult = App.Pet.addExp(parsed.amount);
+          if (petResult.leveledUp) {
+            const petData = App.Pet.get();
+            addMessage('left', '🎉 恭喜！' + petData.name + '升到 Lv.' + petResult.newLevel + '，进化为' + petResult.newName + ' ' + petResult.newIcon + '！');
+            window.AppUI.showModal({
+              title: '🎉 宠物升级！',
+              content: petData.name + '升到 Lv.' + petResult.newLevel + '，进化为' + petResult.newName + ' ' + petResult.newIcon + '！继续记账获取更多经验吧～',
+              buttons: [{ text: '太棒了' }]
+            });
+          }
+
+          // 连续打卡
+          App.Checkin.check();
+
+          // 检查徽章解锁
+          const newBadges = App.Badges.checkAll();
+          if (newBadges.length > 0) {
+            newBadges.forEach((badge, i) => {
+              setTimeout(() => {
+                addMessage('left', '🏅 解锁徽章：' + badge.icon + ' ' + badge.name + '！' + badge.desc);
+                window.AppUI.showModal({
+                  title: '🏅 徽章解锁！',
+                  content: badge.icon + ' <b>' + badge.name + '</b><br>' + badge.desc,
+                  buttons: [{ text: '太棒了' }]
+                });
+              }, i * 1200);
+            });
+          }
+
+          // 检查省钱挑战
+          const changedChallenges = App.Challenges.checkAll();
+          if (changedChallenges.length > 0) {
+            changedChallenges.forEach((ch, i) => {
+              setTimeout(() => {
+                const isDone = ch.status === 'completed';
+                const statusText = isDone ? '🎉 挑战完成' : '😢 挑战失败';
+                addMessage('left', statusText + '：' + ch.icon + ' ' + ch.name + '！');
+                window.AppUI.showModal({
+                  title: statusText,
+                  content: ch.icon + ' <b>' + ch.name + '</b><br>' + ch.desc,
+                  buttons: [{ text: '知道了' }]
+                });
+              }, i * 1200);
+            });
+          }
+
+          updateHeader();
+          renderQuickCats();
+          window.dispatchEvent(new CustomEvent('record:added', { detail: { record } }));
+        }
+
+        // 90%预算二次确认（加上这笔后达到90%且之前未到90%）
+        const stats = App.Budget.getStats();
+        const newRatio = stats.monthlyAmount > 0 ? (stats.used + parsed.amount) / stats.monthlyAmount : 0;
+        if (newRatio >= 0.9 && newRatio < 1 && stats.ratio < 0.9) {
+          window.AppUI.showModal({
+            title: '⚠️ 预算警告',
+            content: '记这笔后预算将达到 90%，确定要记 ' + App.Utils.formatMoney(parsed.amount) + ' 元吗？',
+            buttons: [
+              { text: '取消', type: 'default', onClick: () => { addMessage('left', '已取消记账～'); } },
+              { text: '确定记账', type: 'primary', onClick: doSave }
+            ]
+          });
+          return;
+        }
+        doSave();
+      }
+
+      /** 记账后检查预算阈值并触发提醒 */
+      function checkBudgetAfterRecord() {
+        const triggered = App.Budget.checkThreshold();
+        triggered.forEach(t => {
+          if (t.key === 50) {
+            addMessage('left', '已用一半预算啦，继续保持 👍');
+          } else if (t.key === 80) {
+            window.AppUI.showModal({
+              title: '🟡 预算预警',
+              content: '本月预算已用 80%，注意控制开销哦～',
+              buttons: [{ text: '知道了' }]
+            });
+          } else if (t.key === 100) {
+            if (window.AppUI.launchConfetti) window.AppUI.launchConfetti(80);
+            addMessage('left', '🎉 本月预算刚好用完！精准达标，撒花庆祝～');
+            window.AppUI.showModal({
+              title: '🎉 精准达标！',
+              content: '本月预算刚好用完，太厉害了！全屏撒花庆祝～',
+              buttons: [{ text: '太棒了' }]
+            });
+          } else if (t.key === 'over') {
+            const stats = App.Budget.getStats();
+            const catStats = App.Stats.getCategoryStats();
+            const topCat = catStats[0];
+            const overAmount = Math.abs(stats.remaining);
+            let msg = '😿 超支了！本月已超 ¥' + App.Utils.formatMoney(overAmount);
+            if (topCat) msg += '，花销最多的是「' + topCat.name + '」¥' + App.Utils.formatMoney(topCat.total);
+            msg += '。下个月加油控制预算～';
+            addMessage('left', msg);
+          }
+        });
+      }
+
+      /** 显示欢迎消息 */
+      function showWelcome() {
+        addMessage('left', '你好呀！我是小橘，以后陪你一起记账～试试输入：吃饭 25 元');
+      }
+
+      /** 初始化 */
+      function init() {
+        chatMessages = [];
+        App.init();
+        renderQuickCats();
+        updateHeader();
+        showWelcome();
+
+        sendBtn.addEventListener('click', handleSend);
+        inputEl.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') handleSend();
+        });
+        petInfoEl.addEventListener('click', () => {
+          window.AppUI.switchPage('page-pet');
+        });
+
+        // 监听页面显示，切换到聊天页时更新
+        window.addEventListener('page:show', (e) => {
+          if (e.detail.pageId === 'page-chat') {
+            updateHeader();
+            renderQuickCats();
+          }
+        });
+      }
+
+      // 暴露给测试
+      window.ChatUI = {
+        init,
+        handleSend,
+        addMessage,
+        renderMessages,
+        updateHeader,
+        renderQuickCats,
+        getMessages: () => chatMessages
+      };
+
+      // DOM就绪后初始化
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+
+    // === Canvas 图表绘制 ===
+    (function () {
+      const COLORS = ['#FF8C42', '#7BC8A4', '#6BB6E8', '#FFD166', '#FF6B6B', '#B088F9', '#F4A261', '#81B29A'];
+
+      const Chart = {
+        /** 近7天走势柱状图 */
+        draw7Day: function (ctx, data, width, height) {
+          if (!ctx) return;
+          ctx.clearRect(0, 0, width, height);
+          const padL = 36, padR = 12, padT = 16, padB = 28;
+          const chartW = width - padL - padR;
+          const chartH = height - padT - padB;
+          const maxVal = Math.max(...data.map(d => d.total), 10);
+          const barW = chartW / data.length * 0.55;
+          const gap = chartW / data.length;
+
+          // Y轴刻度
+          ctx.fillStyle = '#9B8E82';
+          ctx.font = '10px sans-serif';
+          ctx.textAlign = 'right';
+          for (let i = 0; i <= 2; i++) {
+            const val = Math.round(maxVal * i / 2);
+            const y = padT + chartH - (chartH * i / 2);
+            ctx.fillText(val, padL - 6, y + 3);
+            ctx.strokeStyle = '#F0E6D9';
+            ctx.beginPath();
+            ctx.moveTo(padL, y);
+            ctx.lineTo(width - padR, y);
+            ctx.stroke();
+          }
+
+          // 柱状
+          data.forEach((d, i) => {
+            const x = padL + gap * i + (gap - barW) / 2;
+            const h = d.total > 0 ? (d.total / maxVal) * chartH : 0;
+            const y = padT + chartH - h;
+            // 圆角柱
+            const r = Math.min(4, barW / 2);
+            ctx.fillStyle = '#FF8C42';
+            ctx.beginPath();
+            ctx.moveTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.lineTo(x + barW - r, y);
+            ctx.quadraticCurveTo(x + barW, y, x + barW, y + r);
+            ctx.lineTo(x + barW, y + h);
+            ctx.lineTo(x, y + h);
+            ctx.closePath();
+            ctx.fill();
+            // 金额
+            if (d.total > 0) {
+              ctx.fillStyle = '#4A3F35';
+              ctx.font = '10px sans-serif';
+              ctx.textAlign = 'center';
+              ctx.fillText(d.total, x + barW / 2, y - 4);
+            }
+            // X轴标签
+            ctx.fillStyle = '#9B8E82';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(d.label, x + barW / 2, height - 8);
+          });
+        },
+
+        /** 分类占比环形图 */
+        drawCategoryPie: function (ctx, data, width, height) {
+          if (!ctx) return;
+          ctx.clearRect(0, 0, width, height);
+          const cx = width / 2, cy = height / 2 - 6;
+          const r = Math.min(width, height) / 2 - 30;
+          const innerR = r * 0.6;
+          const total = data.reduce((s, d) => s + d.total, 0);
+
+          if (total === 0) {
+            ctx.fillStyle = '#9B8E82';
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('暂无数据', cx, cy);
+            return;
+          }
+
+          let startAngle = -Math.PI / 2;
+          data.forEach((d, i) => {
+            const angle = (d.total / total) * Math.PI * 2;
+            ctx.fillStyle = COLORS[i % COLORS.length];
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, startAngle, startAngle + angle);
+            ctx.arc(cx, cy, innerR, startAngle + angle, startAngle, true);
+            ctx.closePath();
+            ctx.fill();
+            startAngle += angle;
+          });
+
+          // 中心文字
+          ctx.fillStyle = '#4A3F35';
+          ctx.font = 'bold 18px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('¥' + total, cx, cy - 2);
+          ctx.fillStyle = '#9B8E82';
+          ctx.font = '10px sans-serif';
+          ctx.fillText('本月总开销', cx, cy + 14);
+        },
+
+        /** 月度趋势柱状图 */
+        drawMonthTrend: function (ctx, data, width, height) {
+          if (!ctx) return;
+          ctx.clearRect(0, 0, width, height);
+          const padL = 36, padR = 12, padT = 16, padB = 28;
+          const chartW = width - padL - padR;
+          const chartH = height - padT - padB;
+          const maxVal = Math.max(...data.map(d => d.total), 10);
+          const barW = chartW / data.length * 0.5;
+          const gap = chartW / data.length;
+
+          ctx.fillStyle = '#9B8E82';
+          ctx.font = '10px sans-serif';
+          ctx.textAlign = 'right';
+          for (let i = 0; i <= 2; i++) {
+            const val = Math.round(maxVal * i / 2);
+            const y = padT + chartH - (chartH * i / 2);
+            ctx.fillText(val, padL - 6, y + 3);
+            ctx.strokeStyle = '#F0E6D9';
+            ctx.beginPath();
+            ctx.moveTo(padL, y);
+            ctx.lineTo(width - padR, y);
+            ctx.stroke();
+          }
+
+          data.forEach((d, i) => {
+            const x = padL + gap * i + (gap - barW) / 2;
+            const h = d.total > 0 ? (d.total / maxVal) * chartH : 0;
+            const y = padT + chartH - h;
+            ctx.fillStyle = '#6BB6E8';
+            const r = Math.min(4, barW / 2);
+            ctx.beginPath();
+            ctx.moveTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.lineTo(x + barW - r, y);
+            ctx.quadraticCurveTo(x + barW, y, x + barW, y + r);
+            ctx.lineTo(x + barW, y + h);
+            ctx.lineTo(x, y + h);
+            ctx.closePath();
+            ctx.fill();
+            if (d.total > 0) {
+              ctx.fillStyle = '#4A3F35';
+              ctx.font = '9px sans-serif';
+              ctx.textAlign = 'center';
+              ctx.fillText(d.total, x + barW / 2, y - 3);
+            }
+            ctx.fillStyle = '#9B8E82';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(d.label, x + barW / 2, height - 8);
+          });
+        },
+
+        /** 获取分类图例数据 */
+        getCategoryLegend: function (data) {
+          return data.map((d, i) => ({
+            color: COLORS[i % COLORS.length],
+            name: d.name,
+            total: d.total,
+            percent: Math.round(d.percent)
+          }));
+        }
+      };
+
+      window.Chart = Chart;
+    })();
+
+    // === 概览页 UI ===
+    (function () {
+      let currentChart = '7day';
+      const canvas = document.getElementById('chartCanvas');
+      const legendEl = document.getElementById('chartLegend');
+
+      function getCtx() {
+        return canvas ? canvas.getContext('2d') : null;
+      }
+
+      /** 渲染概览全部数据 */
+      function render() {
+        // 今日数据
+        const today = App.Stats.getTodayTotal();
+        document.getElementById('overviewTodayAmount').textContent = App.Utils.formatMoney(today.total);
+        document.getElementById('overviewTodayCount').textContent = '今日 ' + today.count + ' 笔';
+
+        // 预算数据
+        const budgetStats = App.Budget.getStats();
+        document.getElementById('budgetUsed').textContent = '¥' + App.Utils.formatMoney(budgetStats.used);
+        document.getElementById('budgetRemaining').textContent = '¥' + App.Utils.formatMoney(budgetStats.remaining);
+        document.getElementById('budgetTotal').textContent = '¥' + App.Utils.formatMoney(budgetStats.monthlyAmount);
+        const percent = Math.min(Math.round(budgetStats.ratio * 100), 100);
+        document.getElementById('budgetProgressBar').style.width = percent + '%';
+        document.getElementById('budgetProgressText').textContent = '已使用 ' + percent + '%';
+
+        // 快捷记账
+        renderQuickRecords();
+        // 宠物
+        renderPet();
+        // 最近消费
+        renderRecent();
+        // 图表
+        renderChart();
+      }
+
+      /** 渲染快捷记账按钮（按使用频率取前6） */
+      function renderQuickRecords() {
+        const grid = document.getElementById('quickRecordGrid');
+        const cats = App.Categories.getAll();
+        const records = App.Records.getAll();
+        // 统计使用频率
+        const countMap = {};
+        records.forEach(r => { countMap[r.categoryId] = (countMap[r.categoryId] || 0) + 1; });
+        // 排序：使用频率降序，未使用的按sort
+        const sorted = cats.sort((a, b) => (countMap[b.id] || 0) - (countMap[a.id] || 0) || a.sort - b.sort);
+        const top6 = sorted.slice(0, 6);
+
+        grid.innerHTML = '';
+        top6.forEach(cat => {
+          const btn = document.createElement('div');
+          btn.className = 'quick-record-btn';
+          btn.innerHTML = '<span class="qr-icon">' + cat.icon + '</span><span class="qr-name">' + cat.name + '</span>';
+          btn.addEventListener('click', () => {
+            window.AppUI.switchPage('page-chat');
+            setTimeout(() => {
+              const input = document.getElementById('chatInput');
+              if (input) {
+                input.value = cat.name + ' ';
+                input.focus();
+              }
+            }, 50);
+          });
+          grid.appendChild(btn);
+        });
+      }
+
+      /** 渲染宠物小卡片 */
+      function renderPet() {
+        const pet = App.Storage.get('pet') || { name: '小橘', level: 1 };
+        const levels = ['🥚', '🐱', '😺', '😻', '👑'];
+        const levelNames = ['猫蛋', '小奶猫', '幼猫', '成年猫', '猫王'];
+        document.getElementById('overviewPetAvatar').textContent = levels[pet.level - 1] || '🥚';
+        document.getElementById('overviewPetName').textContent = pet.name;
+        const budgetStats = App.Budget.getStats();
+        let moodDesc = '状态很好';
+        if (budgetStats.ratio >= 1) moodDesc = '超支了';
+        else if (budgetStats.ratio >= 0.9) moodDesc = '快超支了';
+        else if (budgetStats.ratio >= 0.8) moodDesc = '有点紧张';
+        else if (budgetStats.ratio >= 0.5) moodDesc = '还算正常';
+        document.getElementById('overviewPetDesc').textContent = 'Lv.' + pet.level + ' ' + (levelNames[pet.level - 1] || '猫蛋') + ' · ' + moodDesc;
+      }
+
+      /** 渲染最近消费 */
+      function renderRecent() {
+        const list = document.getElementById('recentList');
+        const recent = App.Records.getRecent(5);
+        list.innerHTML = '';
+        if (recent.length === 0) {
+          list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-light);font-size:13px;">暂无记录，去记一笔吧～</div>';
+          return;
+        }
+        recent.forEach(r => {
+          const item = document.createElement('div');
+          item.className = 'recent-item';
+          item.innerHTML = '<div class="recent-icon">' + r.categoryIcon + '</div>' +
+            '<div class="recent-info"><div class="recent-name">' + App.Utils.escapeHtml(r.categoryName) + '</div>' +
+            '<div class="recent-time">' + r.date + ' ' + r.time + '</div></div>' +
+            '<div class="recent-amount">¥' + App.Utils.formatMoney(r.amount) + '</div>';
+          item.addEventListener('click', () => {
+            window.BillsUI.openDetail(r.id);
+          });
+          list.appendChild(item);
+        });
+      }
+
+      /** 渲染图表 */
+      function renderChart() {
+        const ctx = getCtx();
+        const w = canvas.width, h = canvas.height;
+        legendEl.innerHTML = '';
+        if (currentChart === '7day') {
+          const data = App.Stats.get7DayTrend();
+          window.Chart.draw7Day(ctx, data, w, h);
+        } else if (currentChart === 'category') {
+          const data = App.Stats.getCategoryStats();
+          window.Chart.drawCategoryPie(ctx, data, w, h);
+          const legend = window.Chart.getCategoryLegend(data);
+          legend.forEach(l => {
+            const item = document.createElement('div');
+            item.className = 'legend-item';
+            item.innerHTML = '<span class="legend-dot" style="background:' + l.color + '"></span>' + l.name + ' ¥' + l.total + ' (' + l.percent + '%)';
+            legendEl.appendChild(item);
+          });
+        } else if (currentChart === 'month') {
+          const data = App.Stats.getMonthTrend(6);
+          window.Chart.drawMonthTrend(ctx, data, w, h);
+        }
+      }
+
+      /** 初始化 */
+      let _initialized = false;
+      function init() {
+        if (_initialized) return;
+        _initialized = true;
+        // 图表tab切换
+        document.querySelectorAll('.chart-tab').forEach(tab => {
+          tab.addEventListener('click', () => {
+            document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentChart = tab.dataset.chart;
+            renderChart();
+          });
+        });
+        // 宠物卡片跳转
+        document.getElementById('overviewPetCard').addEventListener('click', () => {
+          window.AppUI.switchPage('page-pet');
+        });
+        // 预算卡片跳转设置
+        document.getElementById('overviewBudgetCard').addEventListener('click', () => {
+          window.AppUI.switchPage('page-me');
+        });
+        // 监听页面显示
+        window.addEventListener('page:show', (e) => {
+          if (e.detail.pageId === 'page-overview') render();
+        });
+        // 监听记录添加
+        window.addEventListener('record:added', () => {
+          if (document.getElementById('page-overview').classList.contains('active')) render();
+        });
+        render();
+      }
+
+      window.OverviewUI = { init, render, renderChart };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+
+    // === 账单页 UI ===
+    (function () {
+      let currentMonth = App.Utils.thisMonth();
+      let currentFilter = null; // null=全部, 或分类ID
+      let currentDetailId = null;
+
+      /** 渲染账单页 */
+      function render() {
+        renderMonth();
+        renderList();
+      }
+
+      /** 渲染月份和总开销 */
+      function renderMonth() {
+        const [y, m] = currentMonth.split('-');
+        document.getElementById('billsMonthText').textContent = y + '年' + parseInt(m) + '月';
+        const monthTotal = App.Stats.getMonthTotal(currentMonth);
+        document.getElementById('billsMonthTotal').textContent = '¥' + App.Utils.formatMoney(monthTotal.total);
+        const filterBtn = document.getElementById('billsFilterBtn');
+        if (currentFilter) {
+          const cat = App.Categories.getById(currentFilter);
+          filterBtn.textContent = cat ? cat.icon + ' ' + cat.name : '全部分类';
+        } else {
+          filterBtn.textContent = '全部分类';
+        }
+      }
+
+      /** 渲染记录列表（按日期分组） */
+      function renderList() {
+        const container = document.getElementById('billsListContainer');
+        let records = App.Records.getByMonth(currentMonth);
+        if (currentFilter) {
+          records = records.filter(r => r.categoryId === currentFilter);
+        }
+        if (records.length === 0) {
+          container.innerHTML = '<div class="bills-empty"><div class="empty-icon">📭</div><div>本月暂无记录</div></div>';
+          return;
+        }
+        const groups = App.Stats.groupByDate(records);
+        container.innerHTML = '';
+        groups.forEach(group => {
+          const groupEl = document.createElement('div');
+          groupEl.className = 'bill-date-group';
+          const [y, m, d] = group.date.split('-');
+          groupEl.innerHTML = '<div class="bill-date-header"><span>' + parseInt(m) + '月' + parseInt(d) + '日</span>' +
+            '<span class="bill-date-total">¥' + App.Utils.formatMoney(group.total) + '</span></div>';
+          const listEl = document.createElement('div');
+          listEl.className = 'bill-list';
+          group.records.forEach(r => {
+            const item = document.createElement('div');
+            item.className = 'bill-item';
+            let extras = '';
+            if (r.mood) {
+              const moodIcons = { happy: '😊', normal: '😐', sad: '😢', impulse: '😤' };
+              extras += '<span class="bill-mood">' + (moodIcons[r.mood] || '') + '</span>';
+            }
+            if (r.note) extras += '<span class="bill-note-icon">📝</span>';
+            item.innerHTML = '<div class="bill-icon">' + r.categoryIcon + '</div>' +
+              '<div class="bill-info"><div class="bill-name">' + App.Utils.escapeHtml(r.categoryName) + extras + '</div>' +
+              '<div class="bill-time">' + r.time + '</div></div>' +
+              '<div class="bill-amount">¥' + App.Utils.formatMoney(r.amount) + '</div>';
+            item.addEventListener('click', () => openDetail(r.id));
+            listEl.appendChild(item);
+          });
+          groupEl.appendChild(listEl);
+          container.appendChild(groupEl);
+        });
+      }
+
+      /** 打开详情页 */
+      function openDetail(recordId) {
+        const record = App.Records.getAll().find(r => r.id === recordId);
+        if (!record) return;
+        currentDetailId = recordId;
+        document.getElementById('detailAmount').textContent = App.Utils.formatMoney(record.amount);
+        document.getElementById('detailCategory').textContent = record.categoryIcon + ' ' + record.categoryName;
+        document.getElementById('detailTime').textContent = record.date + ' ' + record.time;
+        document.getElementById('detailNoteInput').value = record.note || '';
+        // 心情
+        document.querySelectorAll('#detailMoodSelector .mood-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.mood === record.mood);
+        });
+        document.getElementById('billDetailOverlay').classList.add('show');
+      }
+
+      /** 关闭详情页 */
+      function closeDetail() {
+        document.getElementById('billDetailOverlay').classList.remove('show');
+        currentDetailId = null;
+        render();
+      }
+
+      /** 保存备注 */
+      function saveNote() {
+        if (!currentDetailId) return;
+        const note = document.getElementById('detailNoteInput').value;
+        App.Records.update(currentDetailId, { note: note });
+      }
+
+      /** 设置心情 */
+      function setMood(mood) {
+        if (!currentDetailId) return;
+        App.Records.update(currentDetailId, { mood: mood });
+        document.querySelectorAll('#detailMoodSelector .mood-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.mood === mood);
+        });
+      }
+
+      /** 删除记录 */
+      function deleteRecord() {
+        if (!currentDetailId) return;
+        window.AppUI.showModal({
+          title: '确认删除',
+          content: '确定要删除这条记录吗？此操作不可恢复。',
+          buttons: [
+            { text: '取消', type: 'default' },
+            {
+              text: '删除', type: 'danger', onClick: () => {
+                App.Records.delete(currentDetailId);
+                window.dispatchEvent(new CustomEvent('record:deleted', { detail: { id: currentDetailId } }));
+                closeDetail();
+              }
+            }
+          ]
+        });
+      }
+
+      /** 切换月份 */
+      function changeMonth(delta) {
+        const [y, m] = currentMonth.split('-').map(Number);
+        const d = new Date(y, m - 1 + delta, 1);
+        currentMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        render();
+      }
+
+      /** 分类筛选 */
+      function showFilter() {
+        const cats = App.Categories.getAll();
+        let buttons = [{ text: '全部分类', type: 'default', onClick: () => { currentFilter = null; render(); } }];
+        cats.forEach(cat => {
+          buttons.push({
+            text: cat.icon + ' ' + cat.name, type: 'default',
+            onClick: () => { currentFilter = cat.id; render(); }
+          });
+        });
+        window.AppUI.showModal({ title: '筛选分类', content: '选择要查看的分类', buttons: buttons });
+      }
+
+      /** 初始化 */
+      let _initialized = false;
+      function init() {
+        if (_initialized) return;
+        _initialized = true;
+        document.getElementById('billsPrevMonth').addEventListener('click', () => changeMonth(-1));
+        document.getElementById('billsNextMonth').addEventListener('click', () => changeMonth(1));
+        document.getElementById('billsFilterBtn').addEventListener('click', showFilter);
+        document.getElementById('detailBackBtn').addEventListener('click', closeDetail);
+        document.getElementById('detailNoteInput').addEventListener('blur', saveNote);
+        document.querySelectorAll('#detailMoodSelector .mood-btn').forEach(btn => {
+          btn.addEventListener('click', () => setMood(btn.dataset.mood));
+        });
+        document.getElementById('detailDeleteBtn').addEventListener('click', deleteRecord);
+        // 监听记录删除
+        window.addEventListener('record:deleted', () => {
+          if (document.getElementById('page-bills').classList.contains('active')) render();
+        });
+        // 监听页面显示
+        window.addEventListener('page:show', (e) => {
+          if (e.detail.pageId === 'page-bills') render();
+        });
+        render();
+      }
+
+      window.BillsUI = { init, render, openDetail, closeDetail, changeMonth, setMood, deleteRecord };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+
+    // === 设置页（我的） ===
+    (function () {
+      function render() {
+        const pet = App.Storage.get('pet') || { name: '小橘', level: 1 };
+        const levels = ['🥚', '🐱', '😺', '😻', '👑'];
+        const levelNames = ['猫蛋', '小奶猫', '幼猫', '成年猫', '猫王'];
+        document.getElementById('settingsAvatar').textContent = levels[pet.level - 1] || '🥚';
+        document.getElementById('settingsName').textContent = pet.name;
+        const checkin = App.Storage.get('checkin') || { totalDays: 0 };
+        document.getElementById('settingsDesc').textContent = 'Lv.' + pet.level + ' ' + (levelNames[pet.level - 1] || '猫蛋') + ' · 已记账 ' + checkin.totalDays + ' 天';
+
+        const budget = App.Budget.get();
+        document.getElementById('settingBudgetValue').textContent = '¥' + App.Utils.formatMoney(budget.monthlyAmount) + '/月';
+        document.getElementById('settingCategoryValue').textContent = App.Categories.getAll().length + ' 个';
+
+        // 开关状态
+        const settings = App.Storage.get('settings') || {};
+        document.getElementById('moodToggle').classList.toggle('on', settings.moodEnabled !== false);
+        document.getElementById('reminderToggle').classList.toggle('on', budget.reminderEnabled !== false);
+      }
+
+      function init() {
+        // 心情开关
+        document.getElementById('moodToggle').addEventListener('click', function () {
+          this.classList.toggle('on');
+          const settings = App.Storage.get('settings') || {};
+          settings.moodEnabled = this.classList.contains('on');
+          App.Storage.set('settings', settings);
+        });
+        // 提醒开关
+        document.getElementById('reminderToggle').addEventListener('click', function () {
+          this.classList.toggle('on');
+          App.Budget.setReminder(this.classList.contains('on'));
+        });
+        // 跳转预算管理
+        document.getElementById('settingBudget').addEventListener('click', () => {
+          window.BudgetManagerUI.open();
+        });
+        // 跳转分类管理
+        document.getElementById('settingCategory').addEventListener('click', () => {
+          window.CategoryManagerUI.open();
+        });
+        // 宠物设置（阶段5完善，先跳宠物页）
+        document.getElementById('settingPet').addEventListener('click', () => {
+          window.AppUI.switchPage('page-pet');
+        });
+        // 数据管理
+        document.getElementById('settingData').addEventListener('click', () => {
+          window.DataManagerUI.open();
+        });
+        // 监听页面显示
+        window.addEventListener('page:show', (e) => {
+          if (e.detail.pageId === 'page-me') render();
+        });
+        render();
+      }
+
+      window.SettingsUI = { init, render };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+
+    // === 分类管理 ===
+    (function () {
+      const overlay = document.getElementById('categoryManageOverlay');
+      const listEl = document.getElementById('categoryManageList');
+      const EMOJI_OPTIONS = ['🍚', '📚', '🧴', '🚌', '🎮', '🛍️', '📦', '☕', '🎬', '🎵', '✈️', '🏠', '💊', '💄', '📱', '🎁', '🐾', '🌿', '💰', '🍜'];
+
+      function render() {
+        const cats = App.Categories.getAll();
+        listEl.innerHTML = '';
+        cats.forEach(cat => {
+          const item = document.createElement('div');
+          item.className = 'cat-manage-item';
+          let actions = '<button class="cat-manage-btn" data-action="edit" data-id="' + cat.id + '">编辑</button>';
+          if (!cat.isDefault) {
+            actions += '<button class="cat-manage-btn danger" data-action="delete" data-id="' + cat.id + '">删除</button>';
+          }
+          item.innerHTML = '<span class="cat-manage-icon">' + cat.icon + '</span>' +
+            '<span class="cat-manage-name">' + App.Utils.escapeHtml(cat.name) + '</span>' +
+            (cat.isDefault ? '<span class="cat-manage-tag">预设</span>' : '') +
+            '<div class="cat-manage-actions">' + actions + '</div>';
+          listEl.appendChild(item);
+        });
+        // 绑定按钮事件
+        listEl.querySelectorAll('.cat-manage-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = btn.dataset.id;
+            const action = btn.dataset.action;
+            if (action === 'edit') showEditModal(id);
+            else if (action === 'delete') confirmDelete(id);
+          });
+        });
+      }
+
+      function showEditModal(catId) {
+        const cat = catId ? App.Categories.getById(catId) : null;
+        const title = cat ? '编辑分类' : '新增分类';
+        const currentName = cat ? cat.name : '';
+        const currentIcon = cat ? cat.icon : '📦';
+
+        let emojiHtml = '<div class="emoji-picker">';
+        EMOJI_OPTIONS.forEach(emoji => {
+          emojiHtml += '<div class="emoji-option' + (emoji === currentIcon ? ' selected' : '') + '" data-emoji="' + emoji + '">' + emoji + '</div>';
+        });
+        emojiHtml += '</div>';
+
+        window.AppUI.showModal({
+          title: title,
+          content: '<label class="form-label">分类名称</label>' +
+            '<input type="text" class="form-input" id="catNameInput" value="' + App.Utils.escapeHtml(currentName) + '" placeholder="如：餐饮">' +
+            '<label class="form-label" style="margin-top:12px;">选择图标</label>' + emojiHtml,
+          buttons: [
+            { text: '取消', type: 'default' },
+            {
+              text: '保存', type: 'primary', onClick: () => {
+                const name = document.getElementById('catNameInput').value.trim();
+                const selectedIcon = document.querySelector('.emoji-option.selected');
+                const icon = selectedIcon ? selectedIcon.dataset.emoji : '📦';
+                if (!name) {
+                  window.AppUI.showModal({ title: '提示', content: '请输入分类名称', buttons: [{ text: '确定' }] });
+                  return;
+                }
+                if (catId) {
+                  App.Categories.update(catId, name, icon);
+                } else {
+                  App.Categories.add(name, icon);
+                }
+                render();
+                window.SettingsUI.render();
+              },
+              close: false
+            }
+          ]
+        });
+        // 绑定emoji选择
+        setTimeout(() => {
+          document.querySelectorAll('.emoji-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+              document.querySelectorAll('.emoji-option').forEach(o => o.classList.remove('selected'));
+              opt.classList.add('selected');
+            });
+          });
+        }, 50);
+      }
+
+      function confirmDelete(catId) {
+        const cat = App.Categories.getById(catId);
+        const records = App.Records.getByCategory(catId);
+        let content = '确定要删除分类"' + cat.name + '"吗？';
+        if (records.length > 0) {
+          content += '<br><br>该分类下有 <b>' + records.length + '</b> 条记录，删除后这些记录将归为"其他"分类。';
+        }
+        window.AppUI.showModal({
+          title: '删除分类',
+          content: content,
+          buttons: [
+            { text: '取消', type: 'default' },
+            {
+              text: '删除', type: 'danger', onClick: () => {
+                App.Categories.delete(catId);
+                render();
+                window.SettingsUI.render();
+              }
+            }
+          ]
+        });
+      }
+
+      function open() {
+        render();
+        overlay.classList.add('show');
+      }
+      function close() {
+        overlay.classList.remove('show');
+      }
+
+      function init() {
+        document.getElementById('categoryManageBack').addEventListener('click', close);
+        document.getElementById('categoryAddBtn').addEventListener('click', () => showEditModal(null));
+      }
+
+      window.CategoryManagerUI = { init, open, close, render };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+
+    // === 预算管理 ===
+    (function () {
+      const overlay = document.getElementById('budgetManageOverlay');
+
+      function open() {
+        const budget = App.Budget.get();
+        const stats = App.Budget.getStats();
+        document.getElementById('budgetManageAmount').textContent = '¥' + App.Utils.formatMoney(budget.monthlyAmount);
+        document.getElementById('budgetManageUsed').textContent = '¥' + App.Utils.formatMoney(stats.used);
+        document.getElementById('budgetManageRemaining').textContent = '¥' + App.Utils.formatMoney(stats.remaining);
+        document.getElementById('budgetAmountInput').value = budget.monthlyAmount;
+        overlay.classList.add('show');
+      }
+
+      function close() {
+        overlay.classList.remove('show');
+      }
+
+      function save() {
+        const amount = parseFloat(document.getElementById('budgetAmountInput').value);
+        if (isNaN(amount) || amount < 0) {
+          window.AppUI.showModal({ title: '提示', content: '请输入有效的预算金额', buttons: [{ text: '确定' }] });
+          return;
+        }
+        App.Budget.setAmount(amount);
+        window.SettingsUI.render();
+        close();
+        window.AppUI.showModal({ title: '保存成功', content: '月度预算已更新为 ¥' + App.Utils.formatMoney(amount), buttons: [{ text: '好的' }] });
+      }
+
+      function init() {
+        document.getElementById('budgetManageBack').addEventListener('click', close);
+        document.getElementById('budgetSaveBtn').addEventListener('click', save);
+      }
+
+      window.BudgetManagerUI = { init, open, close, save };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+
+    // === 宠物页 UI ===
+    (function () {
+      let speechTimer = null;
+
+      function render() {
+        const pet = App.Pet.get();
+        const levelInfo = App.Pet.getLevelInfo(pet.level);
+        const mood = App.Pet.getMood();
+        const expProgress = App.Pet.getExpProgress();
+
+        document.getElementById('petAvatarLarge').textContent = levelInfo.icon;
+        document.getElementById('petNameDisplay').textContent = pet.name;
+        document.getElementById('petLevelBadge').textContent = 'Lv.' + pet.level + ' ' + levelInfo.name;
+        document.getElementById('petMoodDisplay').textContent = mood.icon + ' ' + mood.desc;
+
+        if (expProgress.isMax) {
+          document.getElementById('petExpText').textContent = '已满级';
+          document.getElementById('petExpFill').style.width = '100%';
+        } else {
+          document.getElementById('petExpText').textContent = expProgress.current + ' / ' + expProgress.needed;
+          document.getElementById('petExpFill').style.width = expProgress.percent + '%';
+        }
+
+        // 渲染打卡和徽章
+        if (window.CheckinUI) window.CheckinUI.render();
+        if (window.BadgesUI) window.BadgesUI.render();
+        // 渲染挑战和存钱罐
+        if (window.ChallengeUI) window.ChallengeUI.render();
+        if (window.PiggyUI) window.PiggyUI.render();
+        // 渲染心情统计
+        if (window.MoodStatsUI) window.MoodStatsUI.render();
+      }
+
+      function showSpeech(text) {
+        const bubble = document.getElementById('petSpeechBubble');
+        bubble.textContent = text;
+        bubble.classList.add('show');
+        if (speechTimer) clearTimeout(speechTimer);
+        speechTimer = setTimeout(() => bubble.classList.remove('show'), 2500);
+      }
+
+      function interact() {
+        const avatar = document.getElementById('petAvatarLarge');
+        avatar.classList.remove('bounce');
+        void avatar.offsetWidth; // 触发重绘
+        avatar.classList.add('bounce');
+        const line = App.Pet.interact();
+        showSpeech(line);
+      }
+
+      function rename() {
+        const pet = App.Pet.get();
+        window.AppUI.showModal({
+          title: '修改宠物名字',
+          content: '<label class="form-label">新名字</label>' +
+            '<input type="text" class="form-input" id="petRenameInput" value="' + App.Utils.escapeHtml(pet.name) + '" placeholder="输入新名字" maxlength="10">',
+          buttons: [
+            { text: '取消', type: 'default' },
+            {
+              text: '保存', type: 'primary', onClick: () => {
+                const name = document.getElementById('petRenameInput').value.trim();
+                if (!name) {
+                  window.AppUI.showModal({ title: '提示', content: '名字不能为空', buttons: [{ text: '确定' }] });
+                  return;
+                }
+                App.Pet.setName(name);
+                render();
+                window.SettingsUI.render();
+                showSpeech('我的新名字是' + name + '！');
+              },
+              close: false
+            }
+          ]
+        });
+      }
+
+      function resetPet() {
+        window.AppUI.showModal({
+          title: '重置宠物',
+          content: '确定要重置宠物吗？等级和经验将清零，恢复为 Lv.1 猫蛋。此操作不可恢复。',
+          buttons: [
+            { text: '取消', type: 'default' },
+            {
+              text: '重置', type: 'danger', onClick: () => {
+                App.Pet.reset();
+                render();
+                window.SettingsUI.render();
+                showSpeech('我又变成一颗蛋啦～');
+              }
+            }
+          ]
+        });
+      }
+
+      function init() {
+        document.getElementById('petAvatarLarge').addEventListener('click', interact);
+        document.getElementById('petRenameBtn').addEventListener('click', rename);
+        document.getElementById('petResetBtn').addEventListener('click', resetPet);
+        // 监听页面显示
+        window.addEventListener('page:show', (e) => {
+          if (e.detail.pageId === 'page-pet') render();
+        });
+        // 监听记录添加（记账后宠物可能升级）
+        window.addEventListener('record:added', () => {
+          if (document.getElementById('page-pet').classList.contains('active')) render();
+        });
+        render();
+      }
+
+      window.PetUI = { init, render, interact, showSpeech };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+
+    // === 打卡 UI ===
+    (function () {
+      function render() {
+        const streak = App.Checkin.getStreakInfo();
+        document.getElementById('checkinFire').textContent = streak.icon;
+        document.getElementById('checkinDays').textContent = streak.days;
+        const badge = document.getElementById('checkinBadge');
+        badge.textContent = streak.title;
+        badge.className = 'checkin-badge ' + streak.color;
+        renderCalendar();
+      }
+
+      function renderCalendar() {
+        const grid = document.getElementById('checkinCalendar');
+        const checkedDates = App.Checkin.getMonthCalendar();
+        const today = App.Utils.today();
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const firstDay = new Date(year, month, 1).getDay(); // 0=周日
+
+        grid.innerHTML = '';
+        // 表头
+        ['日', '一', '二', '三', '四', '五', '六'].forEach(d => {
+          const h = document.createElement('div');
+          h.className = 'calendar-day-header';
+          h.textContent = d;
+          grid.appendChild(h);
+        });
+        // 空白
+        for (let i = 0; i < firstDay; i++) {
+          const empty = document.createElement('div');
+          empty.className = 'calendar-day empty';
+          grid.appendChild(empty);
+        }
+        // 日期
+        for (let d = 1; d <= daysInMonth; d++) {
+          const day = document.createElement('div');
+          day.className = 'calendar-day';
+          day.textContent = d;
+          const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+          if (checkedDates.includes(dateStr)) day.classList.add('checked');
+          if (dateStr === today) day.classList.add('today');
+          grid.appendChild(day);
+        }
+      }
+
+      window.CheckinUI = { render };
+    })();
+
+    // === 徽章 UI ===
+    (function () {
+      let currentCategory = 'all';
+      const CATEGORY_NAMES = {
+        all: '全部',
+        persistence: '记账坚持',
+        budget: '预算管理',
+        category: '分类达人',
+        fun: '趣味彩蛋'
+      };
+
+      function renderCategories() {
+        const tabs = document.getElementById('badgeCategoryTabs');
+        tabs.innerHTML = '';
+        Object.keys(CATEGORY_NAMES).forEach(cat => {
+          const tab = document.createElement('div');
+          tab.className = 'badge-category-tab' + (cat === currentCategory ? ' active' : '');
+          tab.textContent = CATEGORY_NAMES[cat];
+          tab.addEventListener('click', () => {
+            currentCategory = cat;
+            renderCategories();
+            renderBadges();
+          });
+          tabs.appendChild(tab);
+        });
+      }
+
+      function renderBadges() {
+        const grid = document.getElementById('badgeGrid');
+        const allBadges = App.Badges.getAll();
+        const filtered = currentCategory === 'all' ? allBadges : allBadges.filter(b => b.category === currentCategory);
+        grid.innerHTML = '';
+        filtered.forEach(badge => {
+          const item = document.createElement('div');
+          item.className = 'badge-item' + (badge.unlocked ? '' : ' locked');
+          item.innerHTML = '<span class="badge-icon">' + badge.icon + '</span>' +
+            '<span class="badge-name">' + badge.name + '</span>';
+          item.addEventListener('click', () => showDetail(badge));
+          grid.appendChild(item);
+        });
+        // 更新计数
+        const unlocked = allBadges.filter(b => b.unlocked).length;
+        document.getElementById('badgeCountText').textContent = unlocked + ' / ' + allBadges.length;
+      }
+
+      function showDetail(badge) {
+        const statusText = badge.unlocked
+          ? '✅ 已解锁（' + new Date(badge.unlockedAt).toLocaleDateString() + '）'
+          : '🔒 未解锁';
+        window.AppUI.showModal({
+          title: badge.icon + ' ' + badge.name,
+          content: '<div style="text-align:center;font-size:40px;margin-bottom:8px;">' + (badge.unlocked ? badge.icon : '🔒') + '</div>' +
+            '<div style="font-size:14px;margin-bottom:8px;">' + badge.desc + '</div>' +
+            '<div style="font-size:12px;color:var(--text-light);">' + statusText + '</div>',
+          buttons: [{ text: '关闭' }]
+        });
+      }
+
+      function render() {
+        renderCategories();
+        renderBadges();
+      }
+
+      window.BadgesUI = { render, showDetail };
+    })();
+
+    // === 省钱挑战 UI ===
+    (function () {
+      const STATUS_TEXT = {
+        not_joined: '未加入',
+        active: '进行中',
+        completed: '已完成',
+        failed: '已失败'
+      };
+
+      function render() {
+        const list = document.getElementById('challengeList');
+        const challenges = App.Challenges.getAll();
+        list.innerHTML = '';
+        challenges.forEach(ch => {
+          const item = document.createElement('div');
+          item.className = 'challenge-item';
+          const progress = App.Challenges.getProgress(ch.id);
+          const showProgress = ch.status === 'active' || ch.status === 'completed';
+
+          let rightHtml = '';
+          if (ch.status === 'not_joined') {
+            rightHtml = '<button class="challenge-join-btn" data-id="' + ch.id + '">加入</button>';
+          } else {
+            rightHtml = '<span class="challenge-status ' + ch.status + '">' + STATUS_TEXT[ch.status] + '</span>';
+          }
+
+          item.innerHTML =
+            '<span class="challenge-icon">' + ch.icon + '</span>' +
+            '<div class="challenge-info">' +
+              '<div class="challenge-name">' + ch.name + '</div>' +
+              '<div class="challenge-desc">' + ch.desc + '</div>' +
+              (showProgress ?
+                '<div class="challenge-progress-bar"><div class="challenge-progress-fill" style="width:' + progress.percent + '%"></div></div>' +
+                '<div class="challenge-detail">' + progress.detail + '（第' + progress.daysPassed + '/' + ch.duration + '天）</div>'
+                : '') +
+            '</div>' +
+            rightHtml;
+
+          const joinBtn = item.querySelector('.challenge-join-btn');
+          if (joinBtn) {
+            joinBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const id = joinBtn.getAttribute('data-id');
+              App.Challenges.join(id);
+              render();
+              window.AppUI.showModal({
+                title: '挑战已加入',
+                content: '已加入「' + ch.name + '」，坚持就是胜利！',
+                buttons: [{ text: '加油' }]
+              });
+            });
+          }
+          list.appendChild(item);
+        });
+      }
+
+      window.ChallengeUI = { render };
+    })();
+
+    // === 存钱罐 UI ===
+    (function () {
+      function render() {
+        const piggy = App.PiggyBank.get();
+        const progress = App.PiggyBank.getProgress();
+        document.getElementById('piggyCurrent').textContent = '¥' + piggy.currentAmount.toFixed(2);
+        document.getElementById('piggyTarget').textContent = piggy.targetAmount > 0
+          ? '目标：¥' + piggy.targetAmount.toFixed(2) + '（' + progress.percent + '%）'
+          : '目标：未设置';
+        document.getElementById('piggyProgressFill').style.width = progress.percent + '%';
+      }
+
+      function deposit() {
+        window.AppUI.showModal({
+          title: '存入存钱罐',
+          content: '<label class="form-label">金额</label>' +
+            '<input type="number" class="form-input" id="piggyAmountInput" placeholder="输入金额" step="0.01">' +
+            '<label class="form-label" style="margin-top:8px;">备注（可选）</label>' +
+            '<input type="text" class="form-input" id="piggyNoteInput" placeholder="存入备注">',
+          buttons: [
+            { text: '取消', type: 'default' },
+            {
+              text: '存入', type: 'primary', onClick: () => {
+                const amount = parseFloat(document.getElementById('piggyAmountInput').value);
+                const note = document.getElementById('piggyNoteInput').value;
+                if (!amount || amount <= 0) {
+                  window.AppUI.showModal({ title: '提示', content: '请输入有效金额', buttons: [{ text: '确定' }] });
+                  return;
+                }
+                App.PiggyBank.deposit(amount, note);
+                render();
+                if (App.PiggyBank.getProgress().percent >= 100) {
+                  window.AppUI.showModal({
+                    title: '🎉 目标达成！',
+                    content: '存钱罐目标已达成！太棒了～',
+                    buttons: [{ text: '太棒了' }]
+                  });
+                }
+              },
+              close: false
+            }
+          ]
+        });
+      }
+
+      function withdraw() {
+        const piggy = App.PiggyBank.get();
+        if (piggy.currentAmount <= 0) {
+          window.AppUI.showModal({ title: '提示', content: '存钱罐里还没有钱哦', buttons: [{ text: '确定' }] });
+          return;
+        }
+        window.AppUI.showModal({
+          title: '从存钱罐取出',
+          content: '<label class="form-label">金额（当前 ¥' + piggy.currentAmount.toFixed(2) + '）</label>' +
+            '<input type="number" class="form-input" id="piggyAmountInput" placeholder="输入金额" step="0.01" max="' + piggy.currentAmount + '">' +
+            '<label class="form-label" style="margin-top:8px;">备注（可选）</label>' +
+            '<input type="text" class="form-input" id="piggyNoteInput" placeholder="取出备注">',
+          buttons: [
+            { text: '取消', type: 'default' },
+            {
+              text: '取出', type: 'primary', onClick: () => {
+                const amount = parseFloat(document.getElementById('piggyAmountInput').value);
+                const note = document.getElementById('piggyNoteInput').value;
+                if (!amount || amount <= 0) {
+                  window.AppUI.showModal({ title: '提示', content: '请输入有效金额', buttons: [{ text: '确定' }] });
+                  return;
+                }
+                const result = App.PiggyBank.withdraw(amount, note);
+                if (!result) {
+                  window.AppUI.showModal({ title: '提示', content: '取出金额不能超过当前余额', buttons: [{ text: '确定' }] });
+                  return;
+                }
+                render();
+              },
+              close: false
+            }
+          ]
+        });
+      }
+
+      function setTarget() {
+        const piggy = App.PiggyBank.get();
+        window.AppUI.showModal({
+          title: '设置存钱目标',
+          content: '<label class="form-label">目标金额</label>' +
+            '<input type="number" class="form-input" id="piggyTargetInput" placeholder="输入目标金额" step="0.01" value="' + (piggy.targetAmount > 0 ? piggy.targetAmount : '') + '">',
+          buttons: [
+            { text: '取消', type: 'default' },
+            {
+              text: '保存', type: 'primary', onClick: () => {
+                const amount = parseFloat(document.getElementById('piggyTargetInput').value);
+                if (!amount || amount <= 0) {
+                  window.AppUI.showModal({ title: '提示', content: '请输入有效金额', buttons: [{ text: '确定' }] });
+                  return;
+                }
+                App.PiggyBank.setTarget(amount);
+                render();
+              },
+              close: false
+            }
+          ]
+        });
+      }
+
+      function init() {
+        document.getElementById('piggyDepositBtn').addEventListener('click', deposit);
+        document.getElementById('piggyWithdrawBtn').addEventListener('click', withdraw);
+        document.getElementById('piggyTargetBtn').addEventListener('click', setTarget);
+        render();
+      }
+
+      window.PiggyUI = { init, render, deposit, withdraw, setTarget };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+
+    // === 消费心情统计 UI ===
+    (function () {
+      const MOODS = [
+        { key: 'happy', icon: '😊', label: '开心' },
+        { key: 'normal', icon: '😐', label: '一般' },
+        { key: 'sad', icon: '😢', label: '难过' },
+        { key: 'impulse', icon: '😤', label: '冲动' }
+      ];
+
+      function render() {
+        const stats = App.Stats.getMoodStats();
+        const grid = document.getElementById('moodStatsGrid');
+        grid.innerHTML = '';
+        MOODS.forEach(m => {
+          const count = stats.counts[m.key] || 0;
+          const item = document.createElement('div');
+          item.className = 'mood-stat-item';
+          item.innerHTML =
+            '<span class="mood-stat-icon">' + m.icon + '</span>' +
+            '<div class="mood-stat-count">' + count + '</div>' +
+            '<div class="mood-stat-label">' + m.label + '</div>';
+          grid.appendChild(item);
+        });
+
+        // 冲动消费分析
+        const impulseCount = stats.impulseCount || 0;
+        const impulseRecords = (App.Storage.get('records') || [])
+          .filter(r => r.mood === 'impulse' && r.date.startsWith(App.Utils.thisMonth()));
+        const impulseTotal = impulseRecords.reduce((s, r) => s + r.amount, 0);
+        const analysisEl = document.getElementById('moodImpulseAnalysis');
+        if (impulseCount > 0) {
+          analysisEl.style.display = 'block';
+          analysisEl.innerHTML = '💡 本月有 <b>' + impulseCount + '</b> 笔冲动消费，共 <b>¥' +
+            impulseTotal.toFixed(2) + '</b>。下次消费前先冷静 3 分钟，也许就不想买了～';
+        } else {
+          analysisEl.style.display = 'none';
+        }
+      }
+
+      window.MoodStatsUI = { render };
+    })();
+
+    // === 账单壁纸生成 UI ===
+    (function () {
+      const QUOTES = [
+        '每一笔都值得被记录',
+        '记账是为了更好地生活',
+        '小钱不记，大钱不保',
+        '今天的克制是明天的自由',
+        '理性消费，快乐生活',
+        '你的小猫在监督你花钱哦',
+        '省下的每一分都是赚的',
+        '财务自由从记账开始'
+      ];
+
+      const COLORS = ['#FF8C42', '#FFB088', '#6BB6E8', '#B088F9', '#4CAF50', '#FFD166', '#F44336'];
+
+      function showMonthPicker() {
+        const now = new Date();
+        let options = '';
+        for (let i = 0; i < 6; i++) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const key = App.Utils.getMonthKey(d.getTime());
+          const label = d.getFullYear() + '年' + (d.getMonth() + 1) + '月';
+          options += '<option value="' + key + '"' + (i === 0 ? ' selected' : '') + '>' + label + '</option>';
+        }
+        window.AppUI.showModal({
+          title: '选择月份',
+          content: '<select class="form-input" id="wallpaperMonthSelect" style="width:100%;">' + options + '</select>',
+          buttons: [
+            { text: '取消', type: 'default' },
+            {
+              text: '生成壁纸', type: 'primary', onClick: () => {
+                const monthKey = document.getElementById('wallpaperMonthSelect').value;
+                generate(monthKey);
+              },
+              close: false
+            }
+          ]
+        });
+      }
+
+      function generate(monthKey) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080;
+        canvas.height = 1920;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const records = App.Records.getByMonth(monthKey);
+        const total = records.reduce((s, r) => s + r.amount, 0);
+        const budget = App.Budget.get().monthlyAmount;
+        const catStats = App.Stats.getCategoryStats(monthKey);
+        const pet = App.Pet.get();
+        const petInfo = App.Pet.getLevelInfo(pet.level);
+        const quote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+        const [year, month] = monthKey.split('-');
+
+        // 背景渐变
+        const bgGrad = ctx.createLinearGradient(0, 0, 0, 1920);
+        bgGrad.addColorStop(0, '#FFF8F0');
+        bgGrad.addColorStop(1, '#FFE8D6');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, 1080, 1920);
+
+        // 装饰圆点
+        ctx.fillStyle = 'rgba(255, 140, 66, 0.08)';
+        ctx.beginPath(); ctx.arc(900, 200, 120, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(150, 1700, 100, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255, 140, 66, 0.05)';
+        ctx.beginPath(); ctx.arc(100, 400, 60, 0, Math.PI * 2); ctx.fill();
+
+        // 顶部标题栏
+        ctx.fillStyle = '#FF8C42';
+        roundRect(ctx, 60, 80, 960, 100, 24);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 40px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🐱 记账小猫 · 月度账单', 540, 145);
+
+        // 月份
+        ctx.fillStyle = '#666';
+        ctx.font = '32px sans-serif';
+        ctx.fillText(year + '年' + parseInt(month) + '月', 540, 250);
+
+        // 总开销大数字
+        ctx.fillStyle = '#FF8C42';
+        ctx.font = 'bold 96px sans-serif';
+        ctx.fillText('¥' + total.toFixed(2), 540, 370);
+        ctx.fillStyle = '#999';
+        ctx.font = '28px sans-serif';
+        ctx.fillText('本月总开销', 540, 420);
+
+        // 预算卡片
+        ctx.fillStyle = '#fff';
+        roundRect(ctx, 80, 470, 920, 160, 20);
+        ctx.fill();
+        ctx.fillStyle = '#666';
+        ctx.font = '26px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('预算 ¥' + budget.toFixed(0), 120, 520);
+        ctx.fillText('已花 ¥' + total.toFixed(0), 120, 560);
+        ctx.fillStyle = total > budget ? '#F44336' : '#4CAF50';
+        ctx.fillText('剩余 ¥' + Math.max(0, budget - total).toFixed(0), 120, 600);
+        // 进度条
+        const barX = 480, barY = 530, barW = 480, barH = 24;
+        ctx.fillStyle = '#f0f0f0';
+        roundRect(ctx, barX, barY, barW, barH, 12);
+        ctx.fill();
+        const ratio = Math.min(total / budget, 1);
+        ctx.fillStyle = ratio >= 1 ? '#F44336' : '#FF8C42';
+        roundRect(ctx, barX, barY, barW * ratio, barH, 12);
+        ctx.fill();
+
+        // 分类环图
+        const cx = 540, cy = 820, r = 160;
+        const catTotal = catStats.reduce((s, c) => s + c.total, 0);
+        if (catTotal > 0) {
+          let startAngle = -Math.PI / 2;
+          catStats.forEach((cat, i) => {
+            const angle = (cat.total / catTotal) * Math.PI * 2;
+            ctx.fillStyle = COLORS[i % COLORS.length];
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, r, startAngle, startAngle + angle);
+            ctx.closePath();
+            ctx.fill();
+            startAngle += angle;
+          });
+          // 中心圆
+          ctx.fillStyle = '#FFF8F0';
+          ctx.beginPath(); ctx.arc(cx, cy, r * 0.55, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#FF8C42';
+          ctx.font = 'bold 36px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(catStats.length + '类', cx, cy + 10);
+          ctx.fillStyle = '#999';
+          ctx.font = '22px sans-serif';
+          ctx.fillText('消费分类', cx, cy + 40);
+        }
+
+        // 分类列表
+        let listY = 1050;
+        ctx.textAlign = 'left';
+        catStats.slice(0, 5).forEach((cat, i) => {
+          ctx.fillStyle = COLORS[i % COLORS.length];
+          ctx.beginPath(); ctx.arc(140, listY, 12, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#333';
+          ctx.font = '28px sans-serif';
+          ctx.fillText(cat.icon + ' ' + cat.name, 170, listY + 10);
+          ctx.textAlign = 'right';
+          ctx.fillStyle = '#666';
+          ctx.fillText('¥' + cat.total.toFixed(0) + ' (' + Math.round(cat.total / catTotal * 100) + '%)', 940, listY + 10);
+          ctx.textAlign = 'left';
+          listY += 56;
+        });
+
+        // 宠物形象
+        ctx.font = '120px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(petInfo.icon, 540, 1420);
+        ctx.fillStyle = '#FF8C42';
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillText(pet.name + ' · Lv.' + pet.level + ' ' + petInfo.name, 540, 1500);
+
+        // 金句
+        ctx.fillStyle = '#999';
+        ctx.font = 'italic 30px sans-serif';
+        ctx.fillText('「' + quote + '」', 540, 1600);
+
+        // 底部
+        ctx.fillStyle = '#ccc';
+        ctx.font = '24px sans-serif';
+        ctx.fillText('记账小猫 · 让每一笔都有意义', 540, 1820);
+
+        showPreview(canvas);
+      }
+
+      function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+      }
+
+      function showPreview(canvas) {
+        const dataUrl = canvas.toDataURL('image/png');
+        window.AppUI.showModal({
+          title: '账单壁纸预览',
+          content: '<div class="wallpaper-preview-wrap">' +
+            '<img src="' + dataUrl + '" class="wallpaper-preview-img" alt="账单壁纸">' +
+            '<div class="wallpaper-preview-tip">长按图片可保存到手机</div>' +
+            '</div>',
+          buttons: [
+            { text: '关闭', type: 'default' },
+            {
+              text: '保存图片', type: 'primary', onClick: () => {
+                saveImage(dataUrl);
+              },
+              close: false
+            }
+          ]
+        });
+      }
+
+      function saveImage(dataUrl) {
+        // Web端：创建下载链接
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = '账单壁纸_' + App.Utils.thisMonth() + '.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.AppUI.showModal({
+          title: '已保存',
+          content: '账单壁纸已保存，可在手机相册中查看～',
+          buttons: [{ text: '好的' }]
+        });
+      }
+
+      function init() {
+        const entry = document.getElementById('wallpaperEntry');
+        if (entry) {
+          entry.addEventListener('click', showMonthPicker);
+        }
+      }
+
+      window.WallpaperUI = { init, showMonthPicker, generate, showPreview };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+
+    // === 数据管理 UI ===
+    (function () {
+      function open() {
+        document.getElementById('dataManageOverlay').classList.add('show');
+      }
+
+      function close() {
+        document.getElementById('dataManageOverlay').classList.remove('show');
+      }
+
+      function exportData() {
+        const data = App.Storage.read();
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const now = new Date();
+        const filename = 'accounting_backup_' + now.getFullYear() +
+          String(now.getMonth() + 1).padStart(2, '0') +
+          String(now.getDate()).padStart(2, '0') + '_' +
+          String(now.getHours()).padStart(2, '0') +
+          String(now.getMinutes()).padStart(2, '0') + '.json';
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        window.AppUI.showModal({
+          title: '导出成功',
+          content: '数据已导出为 ' + filename,
+          buttons: [{ text: '好的' }]
+        });
+      }
+
+      function importData() {
+        document.getElementById('importFileInput').click();
+      }
+
+      function handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          try {
+            const data = JSON.parse(ev.target.result);
+            if (!data.records || !data.categories || !data.budget) {
+              window.AppUI.showModal({
+                title: '导入失败',
+                content: '备份文件格式不正确，缺少必需字段（records/categories/budget）',
+                buttons: [{ text: '确定' }]
+              });
+              return;
+            }
+            window.AppUI.showModal({
+              title: '确认导入',
+              content: '导入将覆盖当前所有数据（包括记录、分类、预算、宠物、徽章等），确定继续吗？',
+              buttons: [
+                { text: '取消', type: 'default' },
+                {
+                  text: '确认导入', type: 'primary', onClick: () => {
+                    App.Storage.write(data);
+                    window.AppUI.showModal({
+                      title: '导入成功',
+                      content: '数据已恢复，页面即将刷新',
+                      buttons: [{ text: '确定', onClick: () => location.reload() }]
+                    });
+                  },
+                  close: false
+                }
+              ]
+            });
+          } catch (err) {
+            window.AppUI.showModal({
+              title: '导入失败',
+              content: '文件解析失败，请确认是有效的 JSON 备份文件',
+              buttons: [{ text: '确定' }]
+            });
+          }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+      }
+
+      function clearData() {
+        window.AppUI.showModal({
+          title: '清空数据',
+          content: '<div style="margin-bottom:10px;">此操作将删除所有数据，不可恢复！</div>' +
+            '<div style="margin-bottom:8px;">请输入「确认」以继续：</div>' +
+            '<input type="text" class="form-input" id="clearConfirmInput" placeholder="输入「确认」">',
+          buttons: [
+            { text: '取消', type: 'default' },
+            {
+              text: '下一步', type: 'danger', onClick: () => {
+                const val = document.getElementById('clearConfirmInput').value.trim();
+                if (val !== '确认') {
+                  window.AppUI.showModal({ title: '提示', content: '请输入「确认」', buttons: [{ text: '确定' }] });
+                  return;
+                }
+                window.AppUI.showModal({
+                  title: '最终确认',
+                  content: '确定要清空所有数据吗？此操作不可恢复！',
+                  buttons: [
+                    { text: '取消', type: 'default' },
+                    {
+                      text: '确定清空', type: 'danger', onClick: () => {
+                        App.Storage.clear();
+                        App.init();
+                        window.AppUI.showModal({
+                          title: '已清空',
+                          content: '所有数据已删除，页面即将刷新',
+                          buttons: [{ text: '确定', onClick: () => location.reload() }]
+                        });
+                      },
+                      close: false
+                    }
+                  ]
+                });
+              },
+              close: false
+            }
+          ]
+        });
+      }
+
+      function init() {
+        document.getElementById('dataManageBack').addEventListener('click', close);
+        document.getElementById('exportDataBtn').addEventListener('click', exportData);
+        document.getElementById('importDataBtn').addEventListener('click', importData);
+        document.getElementById('clearDataBtn').addEventListener('click', clearData);
+        document.getElementById('importFileInput').addEventListener('change', handleFileSelect);
+      }
+
+      window.DataManagerUI = { init, open, close, exportData, importData, clearData };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+
+    // 启动
+    console.log('记账小猫 APP 已启动');
+  </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "name": "accounting-cat-app",
+  "version": "1.0.0",
+  "description": "个人开销记账APP - 温暖治愈奶油橘猫风",
+  "main": "www/index.html",
+  "scripts": {
+    "test": "node tests/runner.js",
+    "build": "node scripts/inline.js",
+    "cap:sync": "npx cap sync android",
+    "cap:build": "cd android && gradlew.bat assembleDebug"
+  },
+  "keywords": [
+    "accounting",
+    "capacitor",
+    "android"
+  ],
+  "author": "personal",
+  "license": "MIT",
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.1",
+    "jimp": "^0.16.1",
+    "jsdom": "^30.0.1"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.1",
+    "@capacitor/filesystem": "^8.1.3"
+  }
+}
