@@ -2044,6 +2044,143 @@
       return App.Utils.getMonthKey(Date.now());
     },
 
+    /**
+     * 解析日期文本 -> YYYY-MM-DD
+     * 支持：今天/昨天/前天/大前天、5月1日、5/1、5.1、2025-05-01、2025年5月1日
+     * @param {string} text - 输入文本
+     * @returns {string|null} - YYYY-MM-DD 或 null（未指定日期）
+     */
+    parseDateText: function (text) {
+      if (!text) return null;
+      const now = new Date();
+
+      // 相对日期（注意顺序：大前天必须在前天之前匹配）
+      if (/大前天/.test(text)) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - 3);
+        return App.Utils.formatDate(d.getTime());
+      }
+      if (/今天|今日/.test(text)) {
+        return App.Utils.formatDate(now.getTime());
+      }
+      if (/昨天|昨日/.test(text)) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - 1);
+        return App.Utils.formatDate(d.getTime());
+      }
+      if (/前天/.test(text)) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - 2);
+        return App.Utils.formatDate(d.getTime());
+      }
+
+      // 完整日期：2025-05-01 / 2025/05/01 / 2025.05.01
+      let m = text.match(/(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
+      if (m) {
+        const y = parseInt(m[1]);
+        const mo = parseInt(m[2]);
+        const d = parseInt(m[3]);
+        if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+          return y + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        }
+      }
+
+      // 中文完整日期：2025年5月1日
+      m = text.match(/(\d{4})年(\d{1,2})月(\d{1,2})[日号]?/);
+      if (m) {
+        const y = parseInt(m[1]);
+        const mo = parseInt(m[2]);
+        const d = parseInt(m[3]);
+        if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+          return y + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        }
+      }
+
+      // 月日：5月1日 / 5月1号
+      m = text.match(/(\d{1,2})月(\d{1,2})[日号]?/);
+      if (m) {
+        const mo = parseInt(m[1]);
+        const d = parseInt(m[2]);
+        if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+          return now.getFullYear() + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        }
+      }
+
+      // 简写：5/1 / 5.1（仅当不是金额格式时）
+      m = text.match(/(?:^|\s)(\d{1,2})[\/.](\d{1,2})(?:\s|$)/);
+      if (m) {
+        const mo = parseInt(m[1]);
+        const d = parseInt(m[2]);
+        if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+          return now.getFullYear() + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        }
+      }
+
+      return null;
+    },
+
+    /**
+     * 解析时间文本 -> HH:MM
+     * 支持：12:30、12点30分、12点半、下午3点、早上8点、晚上9点半、中午12点、凌晨2点
+     * @param {string} text - 输入文本
+     * @returns {string|null} - HH:MM 或 null（未指定时间）
+     */
+    parseTimeText: function (text) {
+      if (!text) return null;
+
+      // 标准格式：12:30 / 12：30
+      let m = text.match(/(\d{1,2})[:：](\d{2})/);
+      if (m) {
+        const h = parseInt(m[1]);
+        const mi = parseInt(m[2]);
+        if (h >= 0 && h <= 23 && mi >= 0 && mi <= 59) {
+          return String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0');
+        }
+      }
+
+      // 带时段：下午3点半 / 早上8点15分 / 晚上9点
+      const periodMatch = text.match(/(凌晨|早上|上午|中午|下午|晚上|傍晚|夜晚)?(\d{1,2})点(半|(\d{1,2})分?)?/);
+      if (periodMatch) {
+        let h = parseInt(periodMatch[2]);
+        const period = periodMatch[1] || '';
+        let mi = 0;
+        if (periodMatch[3] === '半') {
+          mi = 30;
+        } else if (periodMatch[4]) {
+          mi = parseInt(periodMatch[4]);
+        }
+
+        // 时段调整
+        if ((period === '下午' || period === '晚上' || period === '傍晚' || period === '夜晚') && h < 12) {
+          h += 12;
+        }
+        if (period === '中午' && h < 12) {
+          h = 12;
+        }
+        if (period === '凌晨' && h === 12) {
+          h = 0;
+        }
+
+        if (h >= 0 && h <= 23 && mi >= 0 && mi <= 59) {
+          return String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0');
+        }
+      }
+
+      return null;
+    },
+
+    /**
+     * 将日期(YYYY-MM-DD)和时间(HH:MM)组合为时间戳
+     * @param {string} dateStr - YYYY-MM-DD
+     * @param {string} timeStr - HH:MM
+     * @returns {number} - 时间戳
+     */
+    combineDateTime: function (dateStr, timeStr) {
+      const [y, mo, d] = dateStr.split('-').map(Number);
+      const [h, mi] = (timeStr || '00:00').split(':').map(Number);
+      return new Date(y, mo - 1, d, h, mi, 0, 0).getTime();
+    },
+
     /** HTML转义 */
     escapeHtml: function (str) {
       if (str == null) return '';
@@ -2557,14 +2694,22 @@
     /**
      * 解析输入文本
      * @param {string} text - 用户输入
-     * @returns {object|null} - {categoryId, categoryName, categoryIcon, amount} 或 null
+     * @returns {object|null} - {categoryId, categoryName, categoryIcon, amount, date, time, timestamp} 或 null
      */
     parse: function (text) {
       if (!text || !text.trim()) return null;
       const input = text.trim();
 
-      // 提取金额：匹配数字（支持小数和负数），可选前面有¥/$，后面可选"元/块/钱"
-      const amountMatch = input.match(/(?:¥|\$)?\s*(-?\d+(?:\.\d+)?)\s*(?:元|块|钱)?/);
+      // 提取金额：优先匹配带"元/块/钱"的数字，避免匹配到时间/日期中的数字
+      let amountMatch = input.match(/(-?\d+(?:\.\d+)?)\s*(?:元|块|钱)/);
+      if (!amountMatch) {
+        // 没有明确单位时，匹配所有数字，取最后一个（金额通常在句末）
+        const allNums = input.match(/-?\d+(?:\.\d+)?/g);
+        if (allNums && allNums.length > 0) {
+          const lastNum = allNums[allNums.length - 1];
+          amountMatch = [lastNum, lastNum];
+        }
+      }
       if (!amountMatch) return null;
       const amount = parseFloat(amountMatch[1]);
       if (isNaN(amount) || amount <= 0) return null;
@@ -2573,11 +2718,19 @@
       const category = App.Categories.matchCategory(input);
       if (!category) return null;
 
+      // 解析日期和时间
+      const date = App.Utils.parseDateText(input) || App.Utils.today();
+      const time = App.Utils.parseTimeText(input) || App.Utils.formatTime(Date.now());
+      const timestamp = App.Utils.combineDateTime(date, time);
+
       return {
         categoryId: category.id,
         categoryName: category.name,
         categoryIcon: category.icon,
-        amount: amount
+        amount: amount,
+        date: date,
+        time: time,
+        timestamp: timestamp
       };
     }
   };
@@ -3384,7 +3537,7 @@
 
         /** 执行保存 */
         function doSave() {
-          const record = App.Records.add(parsed.amount, parsed.categoryId, '', null, null, parsed.name);
+          const record = App.Records.add(parsed.amount, parsed.categoryId, '', null, parsed.timestamp, parsed.name);
           if (!record) {
             addMessage('left', '保存失败，请重试');
             return;
