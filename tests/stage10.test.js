@@ -53,6 +53,12 @@ describe('阶段10 - CSS安全区处理', function () {
     assert.ok(css.includes('env(safe-area-inset-top)'), 'CSS应包含顶部安全区safe-area-inset-top');
   });
 
+  test('.app-container使用max()确保至少28px顶部padding', function () {
+    const containerMatch = css.match(/\.app-container\s*\{([\s\S]*?)\}/);
+    assert.ok(containerMatch, '应包含.app-container样式');
+    assert.ok(containerMatch[1].includes('max(28px'), '应使用max(28px, ...)确保至少28px顶部padding');
+  });
+
   test('.app-container包含100dvh动态视口高度', function () {
     assert.ok(css.includes('100dvh'), 'CSS应包含100dvh动态视口高度');
   });
