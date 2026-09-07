@@ -1365,9 +1365,10 @@
      * @returns {object} {weeks: [[{date, day, amount, count, isToday, hasRecords}]], monthTotal, monthKey}
      */
     getMonthCalendar: function (year, month) {
-      const firstDay = new Date(year, month - 1, 1);
+      // 使用UTC时间计算星期几，避免Android WebView时区问题导致日期与周几不匹配
+      const firstDay = new Date(Date.UTC(year, month - 1, 1));
       const lastDay = new Date(year, month, 0);
-      const startWeekday = firstDay.getDay(); // 0=周日
+      const startWeekday = firstDay.getUTCDay(); // 0=周日
       const daysInMonth = lastDay.getDate();
       const todayStr = App.Utils.today();
       const monthKey = year + '-' + String(month).padStart(2, '0');

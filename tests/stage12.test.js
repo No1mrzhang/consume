@@ -44,6 +44,33 @@ describe('阶段12 - Calendar.getMonthCalendar 日历数据', function () {
     assert.ok(cal.weeks.length >= 4 && cal.weeks.length <= 6, '周数应在4-6之间，实际：' + cal.weeks.length);
   });
 
+  test('2026年9月1日是周二（startWeekday=2）', function () {
+    const cal = App.Calendar.getMonthCalendar(2026, 9);
+    // 找到1号的位置
+    let day1Index = -1;
+    let day1Week = -1;
+    cal.weeks.forEach((week, wi) => {
+      week.forEach((day, di) => {
+        if (day && day.day === 1) {
+          day1Index = di;
+          day1Week = wi;
+        }
+      });
+    });
+    assert.strictEqual(day1Index, 2, '9月1日应在周二列（索引2），实际在索引' + day1Index);
+  });
+
+  test('2026年1月1日是周四（startWeekday=4）', function () {
+    const cal = App.Calendar.getMonthCalendar(2026, 1);
+    let day1Index = -1;
+    cal.weeks.forEach(week => {
+      week.forEach((day, di) => {
+        if (day && day.day === 1) day1Index = di;
+      });
+    });
+    assert.strictEqual(day1Index, 4, '1月1日应在周四列（索引4），实际在索引' + day1Index);
+  });
+
   test('每周有7天', function () {
     const cal = App.Calendar.getMonthCalendar(2026, 9);
     cal.weeks.forEach(week => {
