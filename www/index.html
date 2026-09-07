@@ -52,15 +52,19 @@
       max-width: 520px;
       margin: 0 auto;
       min-height: 100vh;
+      min-height: 100dvh;
       position: relative;
-      padding-bottom: 70px;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: calc(70px + env(safe-area-inset-bottom));
       background: var(--bg-cream);
+      box-sizing: border-box;
     }
 
     /* === 页面切换 === */
     .page {
       display: none;
       min-height: calc(100vh - 70px);
+      min-height: calc(100dvh - 70px);
     }
     .page.active {
       display: block;
@@ -211,6 +215,7 @@
       display: none;
       flex-direction: column;
       height: calc(100vh - 64px);
+      height: calc(100dvh - 64px);
       padding-bottom: 0;
     }
     #page-chat.active {
