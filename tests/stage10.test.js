@@ -125,6 +125,13 @@ describe('阶段10 - CSS安全区处理', function () {
     assert.ok(billsGridMatch, '应包含账单日历.calendar-grid样式');
     assert.ok(!billsGridMatch[1].includes('display: grid'), '账单日历.calendar-grid不应是grid布局，避免月汇总被挤到右边');
   });
+
+  test('子页面覆盖层detail-overlay有顶部padding避开状态栏', function () {
+    const overlayMatch = css.match(/\.detail-overlay\s*\{([\s\S]*?)\}/);
+    assert.ok(overlayMatch, '应包含.detail-overlay样式');
+    assert.ok(overlayMatch[1].includes('padding-top'), 'detail-overlay应包含padding-top');
+    assert.ok(overlayMatch[1].includes('max(28px'), 'detail-overlay的padding-top应使用max(28px, ...)确保至少28px');
+  });
 });
 
 describe('阶段10 - 页面渲染验证', function () {
