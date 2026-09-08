@@ -105,6 +105,13 @@ describe('阶段10 - CSS安全区处理', function () {
     assert.ok(actionsMatch[1].includes('flex-wrap'), '弹窗按钮容器应支持flex-wrap换行');
     assert.ok(actionsMatch[1].includes('wrap'), 'flex-wrap值应为wrap');
   });
+
+  test('宠物日历今天已打卡时文字为白色', function () {
+    assert.ok(css.includes('.calendar-day.today.checked'), '应包含.calendar-day.today.checked样式');
+    const todayCheckedMatch = css.match(/\.calendar-day\.today\.checked\s*\{([\s\S]*?)\}/);
+    assert.ok(todayCheckedMatch, '应能匹配到.calendar-day.today.checked样式块');
+    assert.ok(todayCheckedMatch[1].includes('#fff') || todayCheckedMatch[1].includes('white'), '今天已打卡时文字应为白色');
+  });
 });
 
 describe('阶段10 - 页面渲染验证', function () {
