@@ -107,10 +107,23 @@ describe('阶段10 - CSS安全区处理', function () {
   });
 
   test('宠物日历今天已打卡时文字为白色', function () {
-    assert.ok(css.includes('.calendar-day.today.checked'), '应包含.calendar-day.today.checked样式');
-    const todayCheckedMatch = css.match(/\.calendar-day\.today\.checked\s*\{([\s\S]*?)\}/);
-    assert.ok(todayCheckedMatch, '应能匹配到.calendar-day.today.checked样式块');
+    assert.ok(css.includes('.checkin-calendar-day.today.checked'), '应包含.checkin-calendar-day.today.checked样式');
+    const todayCheckedMatch = css.match(/\.checkin-calendar-day\.today\.checked\s*\{([\s\S]*?)\}/);
+    assert.ok(todayCheckedMatch, '应能匹配到.checkin-calendar-day.today.checked样式块');
     assert.ok(todayCheckedMatch[1].includes('#fff') || todayCheckedMatch[1].includes('white'), '今天已打卡时文字应为白色');
+  });
+
+  test('宠物日历使用checkin-前缀类名避免与账单日历冲突', function () {
+    assert.ok(css.includes('.checkin-calendar-grid'), '宠物日历应使用.checkin-calendar-grid类名');
+    assert.ok(css.includes('.checkin-calendar-day'), '宠物日历应使用.checkin-calendar-day类名');
+    assert.ok(css.includes('.checkin-calendar-day-header'), '宠物日历应使用.checkin-calendar-day-header类名');
+  });
+
+  test('账单日历calendar-grid是块级布局（非grid）', function () {
+    // 账单日历的.calendar-grid样式不应包含display: grid（那是宠物日历的）
+    const billsGridMatch = css.match(/\.calendar-grid\s*\{([\s\S]*?)\}/);
+    assert.ok(billsGridMatch, '应包含账单日历.calendar-grid样式');
+    assert.ok(!billsGridMatch[1].includes('display: grid'), '账单日历.calendar-grid不应是grid布局，避免月汇总被挤到右边');
   });
 });
 

@@ -1471,18 +1471,18 @@
     .checkin-badge.blue { background: rgba(107,182,232,0.15); color: #6BB6E8; }
     .checkin-badge.purple { background: rgba(176,136,249,0.15); color: #B088F9; }
     .checkin-badge.gold { background: rgba(255,209,102,0.2); color: #E6A817; }
-    .calendar-grid {
+    .checkin-calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 4px;
     }
-    .calendar-day-header {
+    .checkin-calendar-day-header {
       text-align: center;
       font-size: 10px;
       color: var(--text-light);
       padding: 4px 0;
     }
-    .calendar-day {
+    .checkin-calendar-day {
       aspect-ratio: 1;
       display: flex;
       align-items: center;
@@ -1491,22 +1491,22 @@
       border-radius: 50%;
       color: var(--text-light);
     }
-    .calendar-day.checked {
+    .checkin-calendar-day.checked {
       background: var(--primary);
       color: #fff;
       font-weight: 600;
     }
-    .calendar-day.today {
+    .checkin-calendar-day.today {
       border: 2px solid var(--primary);
       color: var(--primary);
       font-weight: 600;
     }
-    .calendar-day.today.checked {
+    .checkin-calendar-day.today.checked {
       background: var(--primary);
       color: #fff;
       border: 2px solid var(--primary);
     }
-    .calendar-day.empty {
+    .checkin-calendar-day.empty {
       visibility: hidden;
     }
 
@@ -1937,7 +1937,7 @@
           </div>
           <div class="checkin-badge normal" id="checkinBadge">继续加油</div>
         </div>
-        <div class="calendar-grid" id="checkinCalendar"></div>
+        <div class="checkin-calendar-grid" id="checkinCalendar"></div>
       </div>
 
       <!-- 成就徽章 -->
@@ -5212,20 +5212,20 @@
         // 表头
         ['日', '一', '二', '三', '四', '五', '六'].forEach(d => {
           const h = document.createElement('div');
-          h.className = 'calendar-day-header';
+          h.className = 'checkin-calendar-day-header';
           h.textContent = d;
           grid.appendChild(h);
         });
         // 空白
         for (let i = 0; i < firstDay; i++) {
           const empty = document.createElement('div');
-          empty.className = 'calendar-day empty';
+          empty.className = 'checkin-calendar-day empty';
           grid.appendChild(empty);
         }
         // 日期
         for (let d = 1; d <= daysInMonth; d++) {
           const day = document.createElement('div');
-          day.className = 'calendar-day';
+          day.className = 'checkin-calendar-day';
           day.textContent = d;
           const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
           if (checkedDates.includes(dateStr)) day.classList.add('checked');
