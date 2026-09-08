@@ -139,12 +139,33 @@
         }
       }
 
+      // 中文完整日期：2025年五月一号 / 2025年五月一日
+      m = text.match(/(\d{4})年([一二两三四五六七八九十]+)月([一二两三四五六七八九十]+)[日号]?/);
+      if (m) {
+        const y = parseInt(m[1]);
+        const mo = App.Utils.chineseToNumber(m[2]);
+        const d = App.Utils.chineseToNumber(m[3]);
+        if (mo !== null && d !== null && mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+          return y + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        }
+      }
+
       // 月日：5月1日 / 5月1号
       m = text.match(/(\d{1,2})月(\d{1,2})[日号]?/);
       if (m) {
         const mo = parseInt(m[1]);
         const d = parseInt(m[2]);
         if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+          return now.getFullYear() + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        }
+      }
+
+      // 中文月日：九月一号 / 九月一日 / 八月十五号
+      m = text.match(/([一二两三四五六七八九十]+)月([一二两三四五六七八九十]+)[日号]?/);
+      if (m) {
+        const mo = App.Utils.chineseToNumber(m[1]);
+        const d = App.Utils.chineseToNumber(m[2]);
+        if (mo !== null && d !== null && mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
           return now.getFullYear() + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
         }
       }

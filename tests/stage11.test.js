@@ -71,6 +71,37 @@ describe('阶段11 - 日期解析 Utils.parseDateText', function () {
     assert.strictEqual(result, null);
   });
 
+  test('解析中文数字"九月一号"', function () {
+    const result = App.Utils.parseDateText('九月一号吃饭25元');
+    const year = new Date().getFullYear();
+    assert.strictEqual(result, year + '-09-01');
+  });
+
+  test('解析中文数字"九月一日"', function () {
+    const result = App.Utils.parseDateText('九月一日吃饭25元');
+    const year = new Date().getFullYear();
+    assert.strictEqual(result, year + '-09-01');
+  });
+
+  test('解析中文数字"八月十五号"', function () {
+    const result = App.Utils.parseDateText('八月十五号吃饭25元');
+    const year = new Date().getFullYear();
+    assert.strictEqual(result, year + '-08-15');
+  });
+
+  test('解析中文完整日期"2025年五月一号"', function () {
+    const result = App.Utils.parseDateText('2025年五月一号吃饭25元');
+    assert.strictEqual(result, '2025-05-01');
+  });
+
+  test('解析"九月一号三点四十"同时包含日期和时间', function () {
+    const date = App.Utils.parseDateText('九月一号三点四十吃饭25元');
+    const time = App.Utils.parseTimeText('九月一号三点四十吃饭25元');
+    const year = new Date().getFullYear();
+    assert.strictEqual(date, year + '-09-01');
+    assert.strictEqual(time, '03:40');
+  });
+
   test('无效月份返回null', function () {
     const result = App.Utils.parseDateText('13月1日吃饭25元');
     assert.strictEqual(result, null);
@@ -205,6 +236,16 @@ describe('阶段11 - Parser.parse集成日期时间', function () {
     assert.strictEqual(result.date, dateOffset(-1));
     assert.strictEqual(result.time, '15:00');
     assert.ok(result.timestamp > 0, '应包含timestamp');
+  });
+
+  test('解析中文数字日期时间"九月一号三点四十吃饭15元"', function () {
+    const result = App.Parser.parse('九月一号三点四十吃饭15元');
+    assert.ok(result, '应解析成功');
+    const year = new Date().getFullYear();
+    assert.strictEqual(result.date, year + '-09-01');
+    assert.strictEqual(result.time, '03:40');
+    assert.strictEqual(result.amount, 15);
+    assert.strictEqual(result.categoryId, 'cat_food');
   });
 
   test('解析仅包含日期的输入，时间默认为当前', function () {
