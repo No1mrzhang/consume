@@ -142,10 +142,14 @@ describe('阶段3 - 概览页渲染', function () {
     document = window.document;
     window.localStorage.clear();
     window.App.init();
-    // 添加测试数据
-    window.App.Records.add(25, 'cat_food', '午饭', null, new Date(2026, 8, 7, 12, 0).getTime());
-    window.App.Records.add(15, 'cat_food', '奶茶', null, new Date(2026, 8, 7, 14, 0).getTime());
-    window.App.Records.add(200, 'cat_shopping', '', null, new Date(2026, 8, 6, 10, 0).getTime());
+    // 添加测试数据（使用动态日期，今天和昨天）
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0);
+    const today2 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0);
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 10, 0);
+    window.App.Records.add(25, 'cat_food', '午饭', null, today.getTime());
+    window.App.Records.add(15, 'cat_food', '奶茶', null, today2.getTime());
+    window.App.Records.add(200, 'cat_shopping', '', null, yesterday.getTime());
     window.OverviewUI.init();
     window.OverviewUI.render();
   });
@@ -212,9 +216,14 @@ describe('阶段3 - 账单页渲染', function () {
     document = window.document;
     window.localStorage.clear();
     window.App.init();
-    window.App.Records.add(25, 'cat_food', '午饭', null, new Date(2026, 8, 7, 12, 0).getTime());
-    window.App.Records.add(15, 'cat_food', '奶茶', null, new Date(2026, 8, 7, 14, 0).getTime());
-    window.App.Records.add(200, 'cat_shopping', '', null, new Date(2026, 8, 6, 10, 0).getTime());
+    // 添加测试数据（使用动态日期，今天和昨天）
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0);
+    const today2 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0);
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 10, 0);
+    window.App.Records.add(25, 'cat_food', '午饭', null, today.getTime());
+    window.App.Records.add(15, 'cat_food', '奶茶', null, today2.getTime());
+    window.App.Records.add(200, 'cat_shopping', '', null, yesterday.getTime());
     window.BillsUI.init();
     window.BillsUI.render();
   });
@@ -233,11 +242,12 @@ describe('阶段3 - 账单页渲染', function () {
 
   test('记录按日期分组，最新日期排前', function () {
     const groups = document.querySelectorAll('.bill-date-group');
-    assert.strictEqual(groups.length, 2, '应有2个日期分组（9月7日和9月6日）');
+    assert.strictEqual(groups.length, 2, '应有2个日期分组（今天和昨天）');
+    const todayDate = new Date().getDate();
     const firstHeader = groups[0].querySelector('.bill-date-header span').textContent;
-    assert.ok(firstHeader.includes('7日'), '最新日期9月7日应排前');
+    assert.ok(firstHeader.includes(todayDate + '日'), '最新日期今天应排前');
     const firstTotal = groups[0].querySelector('.bill-date-total').textContent;
-    assert.ok(firstTotal.includes('40'), '9月7日小计应为40');
+    assert.ok(firstTotal.includes('40'), '今天小计应为40');
   });
 
   test('每条记录显示分类、金额、时间', function () {

@@ -364,7 +364,7 @@ describe('阶段6 - 打卡UI', function () {
     assert.ok(children.length >= 7, '至少有7个表头');
     // 前7个是表头
     for (let i = 0; i < 7; i++) {
-      assert.ok(children[i].classList.contains('calendar-day-header'));
+      assert.ok(children[i].classList.contains('checkin-calendar-day-header'));
     }
   });
 
@@ -382,7 +382,7 @@ describe('阶段6 - 打卡UI', function () {
   test('今天打卡后日历标记', function () {
     window.App.Checkin.check();
     window.CheckinUI.render();
-    const checked = document.querySelectorAll('.calendar-day.checked');
+    const checked = document.querySelectorAll('.checkin-calendar-day.checked');
     assert.ok(checked.length >= 1, '今天应标记为已打卡');
   });
 });
